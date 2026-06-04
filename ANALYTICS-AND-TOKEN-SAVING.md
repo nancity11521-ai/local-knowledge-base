@@ -38,6 +38,18 @@ analytics/question-analytics.md
 - 按小时的问题量
 - 原始问题明细
 
+打开可视化后台页面：
+
+```bash
+./open-analytics-dashboard.sh
+```
+
+这个命令会刷新统计并打开：
+
+```text
+analytics/question-analytics-dashboard.html
+```
+
 后续如果要做成可视化后台，可以直接读取 `analytics/question-analytics.json`。
 
 ## 3. 省 Token 缓存
