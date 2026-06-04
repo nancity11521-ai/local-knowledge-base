@@ -212,6 +212,11 @@
   }
 
   function init() {
+    if (/^\/c\//.test(location.pathname)) {
+      const lang = getLanguage();
+      location.replace(`/?models=requirement-docs-kb&lang=${encodeURIComponent(lang)}`);
+      return;
+    }
     setLanguage(getLanguage(), false);
     patchFetch();
     scheduleRender(true);

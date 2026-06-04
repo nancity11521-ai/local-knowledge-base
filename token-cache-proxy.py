@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -14,11 +15,14 @@ UPSTREAM_BASE_URL = os.environ.get("UPSTREAM_BASE_URL", "https://api.deepseek.co
 UPSTREAM_API_KEY = os.environ.get("OPENAI_API_KEY") or os.environ.get("UPSTREAM_API_KEY", "")
 CACHE_TTL_SECONDS = int(os.environ.get("CACHE_TTL_SECONDS", "604800"))
 PORT = int(os.environ.get("CACHE_PROXY_PORT", "8000"))
+DB_LOCK = threading.RLock()
 
 os.makedirs(os.path.dirname(CACHE_DB), exist_ok=True)
 
 def db():
-    con = sqlite3.connect(CACHE_DB)
+    con = sqlite3.connect(CACHE_DB, timeout=30)
+    con.execute("pragma journal_mode=wal")
+    con.execute("pragma busy_timeout=30000")
     con.execute(
         """
         create table if not exists cache (
@@ -42,11 +46,15 @@ def db():
     return con
 
 def bump(name, amount=1):
-    with db() as con:
-        con.execute(
-            "insert into stats (key, value) values (?, ?) on conflict(key) do update set value = value + ?",
-            (name, amount, amount),
-        )
+    try:
+        with DB_LOCK:
+            with db() as con:
+                con.execute(
+                    "insert into stats (key, value) values (?, ?) on conflict(key) do update set value = value + ?",
+                    (name, amount, amount),
+                )
+    except sqlite3.Error as exc:
+        print(f"Stats write skipped: {exc}", flush=True)
 
 def normalize_payload(raw):
     try:
@@ -86,20 +94,26 @@ class Handler(BaseHTTPRequestHandler):
         now = int(time.time())
 
         if cacheable:
-            with db() as con:
-                row = con.execute("select status, headers, body, created_at from cache where key = ?", (key,)).fetchone()
-                if row and now - row[3] <= CACHE_TTL_SECONDS:
-                    con.execute("update cache set hits = hits + 1 where key = ?", (key,))
-                    bump("cache_hits")
-                    self.send_response(row[0])
-                    for h, v in json.loads(row[1]).items():
-                        if h.lower() not in {"transfer-encoding", "connection", "content-encoding"}:
-                            self.send_header(h, v)
-                    self.send_header("x-token-cache", "hit")
-                    self.send_header("content-length", str(len(row[2])))
-                    self.end_headers()
-                    self.wfile.write(row[2])
-                    return
+            try:
+                with DB_LOCK:
+                    with db() as con:
+                        row = con.execute("select status, headers, body, created_at from cache where key = ?", (key,)).fetchone()
+                        if row and now - row[3] <= CACHE_TTL_SECONDS:
+                            con.execute("update cache set hits = hits + 1 where key = ?", (key,))
+                            con.execute(
+                                "insert into stats (key, value) values ('cache_hits', 1) on conflict(key) do update set value = value + 1"
+                            )
+                            self.send_response(row[0])
+                            for h, v in json.loads(row[1]).items():
+                                if h.lower() not in {"transfer-encoding", "connection", "content-encoding"}:
+                                    self.send_header(h, v)
+                            self.send_header("x-token-cache", "hit")
+                            self.send_header("content-length", str(len(row[2])))
+                            self.end_headers()
+                            self.wfile.write(row[2])
+                            return
+            except sqlite3.Error as exc:
+                print(f"Cache read skipped: {exc}", flush=True)
 
         url = UPSTREAM_BASE_URL + self.path.replace("/v1", "", 1) if self.path.startswith("/v1") else urljoin(UPSTREAM_BASE_URL + "/", self.path.lstrip("/"))
         headers = {k: v for k, v in self.headers.items() if k.lower() not in {"host", "content-length", "connection"}}
@@ -118,12 +132,18 @@ class Handler(BaseHTTPRequestHandler):
             response_headers = dict(exc.headers.items())
 
         if cacheable and status == 200:
-            with db() as con:
-                con.execute(
-                    "insert or replace into cache (key, status, headers, body, created_at, hits) values (?, ?, ?, ?, ?, coalesce((select hits from cache where key = ?), 0))",
-                    (key, status, json.dumps(response_headers), body, now, key),
-                )
-                bump("cache_misses")
+            try:
+                with DB_LOCK:
+                    with db() as con:
+                        con.execute(
+                            "insert or replace into cache (key, status, headers, body, created_at, hits) values (?, ?, ?, ?, ?, coalesce((select hits from cache where key = ?), 0))",
+                            (key, status, json.dumps(response_headers), body, now, key),
+                        )
+                        con.execute(
+                            "insert into stats (key, value) values ('cache_misses', 1) on conflict(key) do update set value = value + 1"
+                        )
+            except sqlite3.Error as exc:
+                print(f"Cache write skipped: {exc}", flush=True)
 
         self.send_response(status)
         for h, v in response_headers.items():
