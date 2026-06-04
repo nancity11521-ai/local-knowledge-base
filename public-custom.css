@@ -9,8 +9,8 @@
   gap: 8px;
   padding: 8px 10px;
   position: fixed;
-  right: 18px;
-  top: 14px;
+  right: 22px;
+  top: 18px;
   z-index: 9999;
 }
 
@@ -87,7 +87,7 @@ input[placeholder*="language" i],
 input[placeholder*="语言" i],
 button[aria-label*="language" i],
 button[aria-label*="语言" i],
-div:has(> label[for*="language" i]),
+div:not(#public-language-switcher):has(> label[for*="language" i]),
 div:has(> label:only-child):has(+ select option[value*="zh" i]) {
   display: none !important;
 }
