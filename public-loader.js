@@ -139,6 +139,9 @@
     };
   }
 
+  let renderQueued = false;
+  let lastRenderAt = 0;
+
   function makeSwitcher() {
     if (document.getElementById('public-language-switcher')) return;
     const lang = activeLanguage();
@@ -155,13 +158,11 @@
     wrapper.querySelector('select').addEventListener('change', (event) => setLanguage(event.target.value, true));
   }
 
-  function replaceExactText(root, from, to) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach((node) => {
-      if (node.nodeValue.trim() === from) {
-        node.nodeValue = node.nodeValue.replace(from, to);
+  function replaceTextInSmallNodes(from, to) {
+    document.querySelectorAll('button, a, label, span, div, h1, h2, h3').forEach((node) => {
+      if (node.children.length > 2) return;
+      if ((node.textContent || '').trim() === from) {
+        node.textContent = to;
       }
     });
   }
@@ -194,19 +195,30 @@
       ['需求文档', text.model],
       ['智能问答', text.model]
     ];
-    replacements.forEach(([from, to]) => replaceExactText(document.body, from, to));
+    replacements.forEach(([from, to]) => replaceTextInSmallNodes(from, to));
+  }
+
+  function scheduleRender(force) {
+    const now = Date.now();
+    if (!force && now - lastRenderAt < 350) return;
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      lastRenderAt = Date.now();
+      makeSwitcher();
+      applyVisibleLanguage();
+    });
   }
 
   function init() {
     setLanguage(getLanguage(), false);
     patchFetch();
-    makeSwitcher();
-    applyVisibleLanguage();
+    scheduleRender(true);
     const observer = new MutationObserver(() => {
-      makeSwitcher();
-      applyVisibleLanguage();
+      scheduleRender(false);
     });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
   }
 
   if (document.readyState === 'loading') {
