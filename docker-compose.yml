@@ -10,6 +10,8 @@ services:
     volumes:
       - open-webui-data:/app/backend/data
       - ./seed-docs:/seed-docs:ro
+      - ./analytics:/app/backend/open_webui/static/analytics:ro
+      - ./admin-loader.js:/app/backend/open_webui/static/loader.js:ro
 
 volumes:
   open-webui-data:
