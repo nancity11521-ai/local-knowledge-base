@@ -6,6 +6,12 @@
 
 外部免登录分享见：[PUBLIC-SHARE.md](./PUBLIC-SHARE.md)
 
+分人员/分知识库权限方案见：[ACCESS-CONTROL.md](./ACCESS-CONTROL.md)
+
+管理员分配模型和自定义角色见：[MODEL-ROLE-MANAGEMENT.md](./MODEL-ROLE-MANAGEMENT.md)
+
+访客隔离、问题统计和省 Token 方案见：[ANALYTICS-AND-TOKEN-SAVING.md](./ANALYTICS-AND-TOKEN-SAVING.md)
+
 这个部署包用于搭建一个本地网页知识库：
 
 - 文档存放在本机 Docker 数据卷中

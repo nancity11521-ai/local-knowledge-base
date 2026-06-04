@@ -1,8 +1,31 @@
 services:
+  token-cache-proxy:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: local-knowledge-base-token-cache
+    restart: unless-stopped
+    env_file:
+      - .env.public
+    environment:
+      - UPSTREAM_BASE_URL=${UPSTREAM_BASE_URL:-https://api.deepseek.com/v1}
+      - CACHE_DB=/cache/token-cache.sqlite3
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-604800}
+      - CACHE_PROXY_PORT=8000
+    volumes:
+      - ./token-cache-proxy.py:/app/token-cache-proxy.py:ro
+      - token-cache-data:/cache
+    command: ["python", "/app/token-cache-proxy.py"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   open-webui-public:
     image: ghcr.io/open-webui/open-webui:main
     container_name: local-knowledge-base-public
     restart: unless-stopped
+    depends_on:
+      - token-cache-proxy
     ports:
       - "${PUBLIC_WEBUI_PORT:-3001}:8080"
     env_file:
@@ -14,3 +37,4 @@ services:
 
 volumes:
   open-webui-public-data:
+  token-cache-data:
