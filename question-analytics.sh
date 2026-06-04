@@ -70,13 +70,29 @@ con = sqlite3.connect("/app/backend/data/webui.db")
 con.row_factory = sqlite3.Row
 cur = con.cursor()
 
+cur.execute(
+    """
+    create table if not exists public_question_log (
+        message_id text primary key,
+        chat_id text,
+        title text,
+        question text,
+        model_id text,
+        created_at integer
+    )
+    """
+)
+
 messages = cur.execute(
     """
-    select cm.chat_id, cm.content, cm.model_id, cm.created_at, c.title
+    select cm.id as message_id, cm.chat_id, cm.content, cm.model_id, cm.created_at, c.title
     from chat_message cm
     left join chat c on c.id = cm.chat_id
     where cm.role = 'user'
-    order by cm.created_at
+    union
+    select message_id, chat_id, question as content, model_id, created_at, title
+    from public_question_log
+    order by created_at
     """
 ).fetchall()
 

@@ -28,6 +28,19 @@ con = sqlite3.connect("/app/backend/data/webui.db")
 con.row_factory = sqlite3.Row
 cur = con.cursor()
 
+cur.execute(
+    """
+    create table if not exists public_question_log (
+        message_id text primary key,
+        chat_id text,
+        title text,
+        question text,
+        model_id text,
+        created_at integer
+    )
+    """
+)
+
 old_chats = cur.execute(
     "select id, title, updated_at from chat where coalesce(updated_at, created_at, 0) < ?",
     (cutoff,),
@@ -36,6 +49,31 @@ chat_ids = [row["id"] for row in old_chats]
 
 if chat_ids:
     placeholders = ",".join("?" for _ in chat_ids)
+    messages = cur.execute(
+        f"""
+        select cm.id, cm.chat_id, cm.content, cm.model_id, cm.created_at, c.title
+        from chat_message cm
+        left join chat c on c.id = cm.chat_id
+        where cm.role = 'user' and cm.chat_id in ({placeholders})
+        """,
+        chat_ids,
+    ).fetchall()
+    for message in messages:
+        cur.execute(
+            """
+            insert or ignore into public_question_log
+            (message_id, chat_id, title, question, model_id, created_at)
+            values (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                message["id"],
+                message["chat_id"],
+                message["title"],
+                message["content"],
+                message["model_id"],
+                message["created_at"],
+            ),
+        )
     cur.execute(f"delete from chat_message where chat_id in ({placeholders})", chat_ids)
     cur.execute(f"delete from chat where id in ({placeholders})", chat_ids)
     con.commit()
