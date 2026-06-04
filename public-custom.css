@@ -1,0 +1,24 @@
+/* Public guest instance: keep the chat surface minimal. */
+button[aria-label="Controls"],
+button[aria-label="用户菜单"],
+button[aria-label="更多"],
+button[aria-label="更多选项"],
+button#input-menu-button,
+button:has(svg.lucide-sliders-horizontal),
+button:has(svg.lucide-ellipsis),
+button:has(img[alt="打开个人资料菜单"]),
+button[aria-label="Add Model"],
+button:has(svg.lucide-plus) {
+  display: none !important;
+}
+
+nav button:not([aria-label]):not([aria-haspopup]) {
+  display: none !important;
+}
+
+/* Hide workspace/admin-style shortcuts from the public sidebar. */
+a[href="/workspace"],
+a[href="/notes"],
+button[aria-label="搜索"] {
+  display: none !important;
+}

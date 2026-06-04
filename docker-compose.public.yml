@@ -1,0 +1,16 @@
+services:
+  open-webui-public:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: local-knowledge-base-public
+    restart: unless-stopped
+    ports:
+      - "${PUBLIC_WEBUI_PORT:-3001}:8080"
+    env_file:
+      - .env.public
+    volumes:
+      - open-webui-public-data:/app/backend/data
+      - ./seed-docs:/seed-docs:ro
+      - ./public-custom.css:/app/backend/open_webui/static/custom.css:ro
+
+volumes:
+  open-webui-public-data:

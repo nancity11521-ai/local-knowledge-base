@@ -1,0 +1,11 @@
+.env
+.env.public
+.sync-tmp/
+backups/
+open-webui-data/
+*.db
+*.sqlite
+*.sqlite3
+*.tar.gz
+__pycache__/
+.DS_Store

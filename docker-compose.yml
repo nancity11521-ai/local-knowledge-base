@@ -1,0 +1,15 @@
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: local-knowledge-base
+    restart: unless-stopped
+    ports:
+      - "${WEBUI_PORT:-3000}:8080"
+    env_file:
+      - .env
+    volumes:
+      - open-webui-data:/app/backend/data
+      - ./seed-docs:/seed-docs:ro
+
+volumes:
+  open-webui-data:
