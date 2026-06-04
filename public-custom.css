@@ -22,3 +22,53 @@ a[href="/notes"],
 button[aria-label="搜索"] {
   display: none !important;
 }
+
+/* Public sidebar: keep only "new chat" and the single public model entry. */
+#sidebar-webui-name {
+  color: transparent !important;
+  position: relative !important;
+}
+
+#sidebar-webui-name::after {
+  color: #111827 !important;
+  content: "在线问答";
+  inset: 0;
+  position: absolute;
+  white-space: nowrap;
+}
+
+.dark #sidebar-webui-name::after {
+  color: #ffffff !important;
+}
+
+a[href^="/c/"],
+a[href^="/channels/"],
+a[href^="/g/"],
+button[aria-label="模型更多操作"],
+button[aria-label="更多模型操作"] {
+  display: none !important;
+}
+
+/* Hide chat history/group containers once their children are hidden. */
+div:has(> a[href^="/c/"]),
+div:has(> a[href^="/channels/"]),
+div:has(> a[href^="/g/"]) {
+  display: none !important;
+}
+
+/* Hide sidebar section labels such as 模型、分组、对话、今天. */
+#sidebar .text-xs,
+#sidebar .text-sm.font-medium,
+#sidebar .text-gray-500,
+aside .text-xs,
+aside .text-sm.font-medium,
+aside .text-gray-500 {
+  display: none !important;
+}
+
+/* Hide default prompt suggestions on the public welcome screen. */
+div[role="list"]:has(button[role="listitem"]),
+div:has(> div > div[role="list"] > button[role="listitem"]),
+button[role="listitem"] {
+  display: none !important;
+}

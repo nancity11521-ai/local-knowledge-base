@@ -87,6 +87,7 @@ seed-docs/
 PUBLIC_WEBUI_PORT=3001
 WEBUI_AUTH=False
 ENABLE_SIGNUP=False
+WEBUI_NAME=在线问答
 MODEL_PROVIDER_NAME=deepseek
 OPENAI_API_BASE_URL=https://api.deepseek.com/v1
 OPENAI_API_KEY=你的 DeepSeek Key
