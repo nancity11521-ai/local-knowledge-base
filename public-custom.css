@@ -1,4 +1,70 @@
 /* Public guest instance: keep the chat surface minimal. */
+#public-language-switcher {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  position: fixed;
+  right: 18px;
+  top: 14px;
+  z-index: 9999;
+}
+
+.dark #public-language-switcher {
+  background: rgba(23, 23, 23, 0.96);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.public-language-label {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.dark .public-language-label {
+  color: #f9fafb;
+}
+
+#public-language-select {
+  appearance: auto;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #111827;
+  cursor: pointer;
+  font-size: 13px;
+  height: 30px;
+  line-height: 30px;
+  min-width: 104px;
+  padding: 0 8px;
+}
+
+.dark #public-language-select {
+  background: #111827;
+  border-color: #4b5563;
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  #public-language-switcher {
+    right: 10px;
+    top: 10px;
+  }
+
+  .public-language-label {
+    display: none;
+  }
+
+  #public-language-select {
+    min-width: 92px;
+  }
+}
+
 button[aria-label="Controls"],
 button[aria-label="用户菜单"],
 button[aria-label="更多"],
@@ -9,6 +75,20 @@ button:has(svg.lucide-ellipsis),
 button:has(img[alt="打开个人资料菜单"]),
 button[aria-label="Add Model"],
 button:has(svg.lucide-plus) {
+  display: none !important;
+}
+
+/* Hide Open WebUI's native language controls; visitors use the top-right switcher only. */
+select:not(#public-language-select):has(option[value*="zh" i]),
+select:not(#public-language-select):has(option[value*="en" i]):has(option[value*="ja" i]),
+input[name*="language" i],
+input[id*="language" i],
+input[placeholder*="language" i],
+input[placeholder*="语言" i],
+button[aria-label*="language" i],
+button[aria-label*="语言" i],
+div:has(> label[for*="language" i]),
+div:has(> label:only-child):has(+ select option[value*="zh" i]) {
   display: none !important;
 }
 
@@ -31,7 +111,7 @@ button[aria-label="搜索"] {
 
 #sidebar-webui-name::after {
   color: #111827 !important;
-  content: "在线问答";
+  content: attr(data-public-title);
   inset: 0;
   position: absolute;
   white-space: nowrap;
@@ -70,5 +150,36 @@ aside .text-gray-500 {
 div[role="list"]:has(button[role="listitem"]),
 div:has(> div > div[role="list"] > button[role="listitem"]),
 button[role="listitem"] {
+  display: none !important;
+}
+
+/* Hide knowledge citations and source file names in public answers. */
+button:has(.line-clamp-1),
+button:has(.line-clamp-2),
+button:has(svg.lucide-file-text),
+button:has(svg.lucide-file),
+button:has(svg.lucide-book-open),
+button[aria-label*="引用"],
+button[aria-label*="来源"],
+button[aria-label*="citation" i],
+button[aria-label*="source" i],
+div:has(> button[aria-label*="引用"]),
+div:has(> button[aria-label*="来源"]),
+div:has(> button[aria-label*="citation" i]),
+div:has(> button[aria-label*="source" i]) {
+  display: none !important;
+}
+
+/* Open WebUI citation chips are often plain rounded spans/divs near messages. */
+.message div[class*="rounded"]:has(.line-clamp-1),
+.message div[class*="rounded"]:has(.line-clamp-2),
+[id^="message-"] div[class*="rounded"]:has(.line-clamp-1),
+[id^="message-"] div[class*="rounded"]:has(.line-clamp-2) {
+  display: none !important;
+}
+
+/* Hide the "引用来源" count button below assistant answers. */
+button:has(span):has(svg.lucide-chevron-down),
+button:has(span):has(svg.lucide-chevron-up) {
   display: none !important;
 }

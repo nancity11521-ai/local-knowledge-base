@@ -34,6 +34,7 @@ services:
       - open-webui-public-data:/app/backend/data
       - ./seed-docs:/seed-docs:ro
       - ./public-custom.css:/app/backend/open_webui/static/custom.css:ro
+      - ./public-loader.js:/app/backend/open_webui/static/loader.js:ro
 
 volumes:
   open-webui-public-data:
