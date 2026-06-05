@@ -25,6 +25,7 @@ html = f"""<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="cache-control" content="no-store">
   <title>问题分析后台</title>
   <style>
     :root {{
@@ -93,7 +94,7 @@ html = f"""<!doctype html>
   </header>
   <main>
     <div class="filters">
-      <div><label for="period">时间范围</label><select id="period"><option value="all">全部</option><option value="month">本月</option><option value="quarter">本季度</option><option value="year">本年</option><option value="custom">自定义日期</option></select></div>
+      <div><label for="period">时间范围</label><select id="period"><option value="all">全部</option><option value="month">本月</option><option value="quarter">本季度</option><option value="year">本年</option><option value="custom">可选日期</option></select></div>
       <div class="custom-date" id="customStartWrap"><label for="startDate">开始日期</label><input id="startDate" type="date"></div>
       <div class="custom-date" id="customEndWrap"><label for="endDate">结束日期</label><input id="endDate" type="date"></div>
       <div><label for="modelFilter">机型</label><select id="modelFilter"><option value="all">全部机型</option></select></div>
