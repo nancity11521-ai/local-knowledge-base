@@ -139,9 +139,6 @@
     };
   }
 
-  let renderQueued = false;
-  let lastRenderAt = 0;
-
   function makeSwitcher() {
     if (document.getElementById('public-language-switcher')) return;
     const lang = activeLanguage();
@@ -199,13 +196,7 @@
   }
 
   function scheduleRender(force) {
-    const now = Date.now();
-    if (!force && now - lastRenderAt < 350) return;
-    if (renderQueued) return;
-    renderQueued = true;
     requestAnimationFrame(() => {
-      renderQueued = false;
-      lastRenderAt = Date.now();
       makeSwitcher();
       applyVisibleLanguage();
     });
@@ -220,10 +211,12 @@
     setLanguage(getLanguage(), false);
     patchFetch();
     scheduleRender(true);
-    const observer = new MutationObserver(() => {
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
       scheduleRender(false);
-    });
-    observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+      if (attempts >= 8) clearInterval(timer);
+    }, 800);
   }
 
   if (document.readyState === 'loading') {

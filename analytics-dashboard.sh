@@ -46,13 +46,15 @@ html = f"""<!doctype html>
     main {{ max-width:1220px; margin:0 auto; padding:22px 24px 28px; }}
     .filters {{
       background:var(--panel); border:1px solid var(--line); border-radius:8px; display:grid;
-      gap:12px; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom:16px; padding:14px;
+      gap:12px; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-bottom:16px; padding:14px;
     }}
     label {{ color:#4b5563; display:block; font-size:12px; font-weight:700; margin-bottom:6px; }}
-    select {{
+    select, input[type="date"] {{
       background:#fff; border:1px solid #d1d5db; border-radius:7px; color:var(--text);
       height:36px; padding:0 10px; width:100%;
     }}
+    .custom-date {{ display:none; }}
+    .custom-date.is-visible {{ display:block; }}
     .metrics {{ display:grid; gap:14px; grid-template-columns:repeat(4, minmax(0,1fr)); margin-bottom:18px; }}
     .metric {{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; }}
     .metric-label {{ color:var(--muted); font-size:13px; margin-bottom:8px; }}
@@ -91,7 +93,9 @@ html = f"""<!doctype html>
   </header>
   <main>
     <div class="filters">
-      <div><label for="period">时间范围</label><select id="period"><option value="all">全部</option><option value="month">本月</option><option value="quarter">本季度</option><option value="year">本年</option></select></div>
+      <div><label for="period">时间范围</label><select id="period"><option value="all">全部</option><option value="month">本月</option><option value="quarter">本季度</option><option value="year">本年</option><option value="custom">自定义日期</option></select></div>
+      <div class="custom-date" id="customStartWrap"><label for="startDate">开始日期</label><input id="startDate" type="date"></div>
+      <div class="custom-date" id="customEndWrap"><label for="endDate">结束日期</label><input id="endDate" type="date"></div>
       <div><label for="modelFilter">机型</label><select id="modelFilter"><option value="all">全部机型</option></select></div>
       <div><label for="typeFilter">问题类型</label><select id="typeFilter"><option value="all">全部类型</option></select></div>
       <div><label for="languageFilter">语言</label><select id="languageFilter"><option value="all">全部语言</option></select></div>
@@ -148,6 +152,10 @@ html = f"""<!doctype html>
     const QUESTIONS = DATA.questions || DATA.recent_questions || [];
     const els = {{
       period: document.getElementById('period'),
+      startDate: document.getElementById('startDate'),
+      endDate: document.getElementById('endDate'),
+      startWrap: document.getElementById('customStartWrap'),
+      endWrap: document.getElementById('customEndWrap'),
       model: document.getElementById('modelFilter'),
       type: document.getElementById('typeFilter'),
       language: document.getElementById('languageFilter'),
@@ -174,6 +182,12 @@ html = f"""<!doctype html>
       if (period === 'year') return new Date(now.getFullYear(), 0, 1).getTime() / 1000;
       return 0;
     }}
+    function customRange() {{
+      if (els.period.value !== 'custom') return {{ start: 0, end: Infinity }};
+      const start = els.startDate.value ? new Date(`${{els.startDate.value}}T00:00:00`).getTime() / 1000 : 0;
+      const end = els.endDate.value ? new Date(`${{els.endDate.value}}T23:59:59`).getTime() / 1000 : Infinity;
+      return {{ start, end }};
+    }}
     function fillSelect(select, values, labelAll) {{
       const selected = select.value || 'all';
       select.innerHTML = `<option value="all">${{labelAll}}</option>` + values.map(v => `<option value="${{html(v)}}">${{html(v)}}</option>`).join('');
@@ -183,12 +197,17 @@ html = f"""<!doctype html>
       fillSelect(els.model, unique(QUESTIONS.flatMap(q => q.models || [])), '全部机型');
       fillSelect(els.type, unique(QUESTIONS.map(q => q.type || '其他')), '全部类型');
       fillSelect(els.language, unique(QUESTIONS.map(q => q.language || '其他')), '全部语言');
-      Object.values(els).forEach(el => el.addEventListener('change', render));
+      [els.period, els.startDate, els.endDate, els.model, els.type, els.language, els.sort].forEach(el => el.addEventListener('change', render));
     }}
     function filteredQuestions() {{
-      const start = periodStart(els.period.value);
+      const custom = customRange();
+      const start = els.period.value === 'custom' ? custom.start : periodStart(els.period.value);
+      const end = els.period.value === 'custom' ? custom.end : Infinity;
+      els.startWrap.classList.toggle('is-visible', els.period.value === 'custom');
+      els.endWrap.classList.toggle('is-visible', els.period.value === 'custom');
       return QUESTIONS.filter(q => {{
         if (start && (q.created_at || 0) < start) return false;
+        if ((q.created_at || 0) > end) return false;
         if (els.model.value !== 'all' && !(q.models || []).includes(els.model.value)) return false;
         if (els.type.value !== 'all' && (q.type || '其他') !== els.type.value) return false;
         if (els.language.value !== 'all' && (q.language || '其他') !== els.language.value) return false;
