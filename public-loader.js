@@ -287,10 +287,16 @@
         placeholder.setAttribute('data-placeholder', text.placeholder);
       }
     });
-    document.querySelectorAll(
-      'button[aria-label="Voice Input"], button[aria-label="语音输入"], button[aria-label="Voice Mode"], button[aria-label="语音模式"]'
-    ).forEach((button) => {
-      button.style.setProperty('display', 'none', 'important');
+    document.querySelectorAll('button').forEach((button) => {
+      const label = `${button.getAttribute('aria-label') || ''} ${button.getAttribute('title') || ''}`.toLowerCase();
+      const isVoiceControl = label.includes('voice')
+        || label.includes('语音')
+        || label.includes('音声')
+        || label.includes('음성')
+        || label.includes('voz')
+        || label.includes('vocal')
+        || label.includes('صوت');
+      if (isVoiceControl) button.style.setProperty('display', 'none', 'important');
     });
     document.querySelectorAll('p').forEach((node) => {
       if (node.closest('#chat-input')) return;

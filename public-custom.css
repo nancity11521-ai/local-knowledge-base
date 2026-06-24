@@ -102,10 +102,14 @@ nav button:not([aria-label]):not([aria-haspopup]) {
 }
 
 /* Public visitors use text questions only. */
-button[aria-label="Voice Input"],
+button[aria-label*="voice" i],
 button[aria-label="语音输入"],
-button[aria-label="Voice Mode"],
-button[aria-label="语音模式"] {
+button[aria-label="语音模式"],
+button[aria-label*="音声"],
+button[aria-label*="음성"],
+button[aria-label*="voz" i],
+button[aria-label*="vocal" i],
+button[aria-label*="صوت"] {
   display: none !important;
 }
 
