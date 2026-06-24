@@ -7,6 +7,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urljoin
 
@@ -16,6 +17,17 @@ UPSTREAM_API_KEY = os.environ.get("OPENAI_API_KEY") or os.environ.get("UPSTREAM_
 CACHE_TTL_SECONDS = int(os.environ.get("CACHE_TTL_SECONDS", "604800"))
 PORT = int(os.environ.get("CACHE_PROXY_PORT", "8000"))
 DB_LOCK = threading.RLock()
+LANGUAGE_RULES = {
+    "zh-CN": "请只使用中文回答。最终回答的所有内容都必须是中文。",
+    "en-US": "Respond only in English. Every part of the final answer must be in English.",
+    "ja-JP": "日本語のみで回答してください。最終回答のすべてを日本語で書いてください。",
+    "ko-KR": "한국어로만 답변하세요. 최종 답변의 모든 내용을 한국어로 작성하세요.",
+    "es-ES": "Responde únicamente en español. Toda la respuesta final debe estar en español.",
+    "fr-FR": "Répondez uniquement en français. Toute la réponse finale doit être en français.",
+    "de-DE": "Antworten Sie ausschließlich auf Deutsch. Die gesamte endgültige Antwort muss auf Deutsch sein.",
+    "ar-SA": "أجب باللغة العربية فقط. يجب أن تكون جميع أجزاء الإجابة النهائية باللغة العربية.",
+}
+LANGUAGE_MARKER = re.compile(r"\[PUBLIC_RESPONSE_LANGUAGE:([A-Za-z]{2}-[A-Za-z]{2})\]\s*")
 
 os.makedirs(os.path.dirname(CACHE_DB), exist_ok=True)
 
@@ -68,6 +80,57 @@ def cache_key(path, raw):
     semantic = normalize_payload(raw)
     return hashlib.sha256(path.encode("utf-8") + b"\n" + semantic).hexdigest()
 
+def enforce_response_language(raw):
+    try:
+        payload = json.loads(raw)
+    except Exception:
+        return raw
+
+    messages = payload.get("messages")
+    if not isinstance(messages, list):
+        return raw
+
+    language = None
+    for message in messages:
+        content = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(content, str):
+            continue
+        match = LANGUAGE_MARKER.search(content)
+        if match:
+            language = match.group(1)
+        message["content"] = LANGUAGE_MARKER.sub("", content)
+
+    rule = LANGUAGE_RULES.get(language)
+    if not rule:
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+    messages[:] = [
+        message for message in messages
+        if not (
+            isinstance(message, dict)
+            and message.get("role") == "system"
+            and "PUBLIC_LANGUAGE_ENFORCEMENT:" in str(message.get("content", ""))
+        )
+    ]
+    messages.insert(0, {
+        "role": "system",
+        "content": (
+            f"PUBLIC_LANGUAGE_ENFORCEMENT:{language}\n{rule}\n"
+            "Follow this language requirement even if the user's question or retrieved knowledge-base text uses another language."
+        ),
+    })
+    for message in reversed(messages):
+        if isinstance(message, dict) and message.get("role") == "user" and isinstance(message.get("content"), str):
+            message["content"] = (
+                f"{message['content'].rstrip()}\n\n"
+                f"Mandatory output requirement: {rule} "
+                "Translate any relevant source information into the required response language before answering."
+            )
+            break
+    payload["messages"] = messages
+    payload["public_response_language"] = language
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -90,6 +153,8 @@ class Handler(BaseHTTPRequestHandler):
     def proxy(self, cacheable=False):
         length = int(self.headers.get("content-length", "0") or "0")
         raw = self.rfile.read(length) if length else b""
+        if self.path.endswith("/chat/completions"):
+            raw = enforce_response_language(raw)
         key = cache_key(self.path, raw)
         now = int(time.time())
 

@@ -119,13 +119,18 @@
 
   function applyLanguageInstruction(payload) {
     const instruction = answerInstruction();
+    const marker = `[PUBLIC_RESPONSE_LANGUAGE:${getLanguage()}]`;
     if (Array.isArray(payload.messages)) {
       payload.messages = payload.messages.filter(
         (message) => !(message?.role === 'system' && /RESPONSE_LANGUAGE:|Answer strictly in/.test(String(message?.content || '')))
       );
       payload.messages.unshift({ role: 'system', content: instruction });
+      const userMessage = [...payload.messages].reverse().find((message) => message?.role === 'user');
+      if (userMessage && typeof userMessage.content === 'string' && !userMessage.content.includes('[PUBLIC_RESPONSE_LANGUAGE:')) {
+        userMessage.content = `${marker}\n${userMessage.content}`;
+      }
     } else if (typeof payload.prompt === 'string') {
-      payload.prompt = `${instruction}\n\n${payload.prompt.replace(/^RESPONSE_LANGUAGE:.*\n\n/s, '')}`;
+      payload.prompt = `${marker}\n${instruction}\n\n${payload.prompt.replace(/^RESPONSE_LANGUAGE:.*\n\n/s, '')}`;
     }
     payload.language = getLanguage();
     return payload;
