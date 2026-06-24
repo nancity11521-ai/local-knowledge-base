@@ -15,65 +15,65 @@
     'zh-CN': {
       title: '在线问答',
       newChat: '新对话',
-      model: '智能问答',
-      description: '公开访客专用：只根据需求文档知识库回答',
-      placeholder: '请输入你的问题',
+      model: 'GMK AI客服',
+      description: 'Ai 智能搜索  问AI答案更轻松。',
+      placeholder: '请输入您的问题+设备型号。',
       chooseLanguage: '语言'
     },
     'en-US': {
       title: 'Online Q&A',
       newChat: 'New chat',
-      model: 'Smart Q&A',
-      description: 'For public visitors: answers are based only on the requirements knowledge base',
-      placeholder: 'Ask your question',
+      model: 'GMK AI Support',
+      description: 'AI-powered search makes finding answers easier.',
+      placeholder: 'Enter your question + device model.',
       chooseLanguage: 'Language'
     },
     'ja-JP': {
       title: 'オンラインQ&A',
       newChat: '新しい会話',
-      model: 'スマートQ&A',
-      description: '公開訪問者向け：要件文書のナレッジベースのみに基づいて回答します',
-      placeholder: '質問を入力してください',
+      model: 'GMK AIカスタマーサポート',
+      description: 'AIスマート検索で、答えがもっと簡単に見つかります。',
+      placeholder: 'ご質問＋デバイスのモデル名を入力してください。',
       chooseLanguage: '言語'
     },
     'ko-KR': {
       title: '온라인 Q&A',
       newChat: '새 대화',
-      model: '스마트 Q&A',
-      description: '공개 방문자 전용: 요구사항 문서 지식 베이스만을 기반으로 답변합니다',
-      placeholder: '질문을 입력하세요',
+      model: 'GMK AI 고객 지원',
+      description: 'AI 스마트 검색으로 더 쉽게 답을 찾아보세요.',
+      placeholder: '질문 + 기기 모델명을 입력하세요.',
       chooseLanguage: '언어'
     },
     'es-ES': {
       title: 'Preguntas en línea',
       newChat: 'Nuevo chat',
-      model: 'Preguntas inteligentes',
-      description: 'Para visitantes públicos: responde únicamente según la base de conocimientos de requisitos',
-      placeholder: 'Escribe tu pregunta',
+      model: 'Atención al cliente GMK AI',
+      description: 'La búsqueda inteligente con IA facilita encontrar respuestas.',
+      placeholder: 'Introduce tu pregunta + modelo del dispositivo.',
       chooseLanguage: 'Idioma'
     },
     'fr-FR': {
       title: 'Questions en ligne',
       newChat: 'Nouvelle discussion',
-      model: 'Questions intelligentes',
-      description: 'Pour les visiteurs publics : réponses fondées uniquement sur la base de connaissances des exigences',
-      placeholder: 'Posez votre question',
+      model: 'Service client GMK AI',
+      description: 'La recherche intelligente par IA facilite l’obtention de réponses.',
+      placeholder: 'Saisissez votre question + le modèle de l’appareil.',
       chooseLanguage: 'Langue'
     },
     'de-DE': {
       title: 'Online-Fragen',
       newChat: 'Neuer Chat',
-      model: 'Intelligente Fragen',
-      description: 'Für öffentliche Besucher: Antworten basieren ausschließlich auf der Wissensdatenbank der Anforderungen',
-      placeholder: 'Stellen Sie Ihre Frage',
+      model: 'GMK AI-Kundenservice',
+      description: 'Mit der intelligenten KI-Suche finden Sie Antworten leichter.',
+      placeholder: 'Geben Sie Ihre Frage + das Gerätemodell ein.',
       chooseLanguage: 'Sprache'
     },
     'ar-SA': {
       title: 'أسئلة وأجوبة',
       newChat: 'محادثة جديدة',
-      model: 'أسئلة ذكية',
-      description: 'للزوار العامّين: تعتمد الإجابات فقط على قاعدة معرفة مستندات المتطلبات',
-      placeholder: 'اكتب سؤالك',
+      model: 'خدمة عملاء GMK بالذكاء الاصطناعي',
+      description: 'يجعل البحث الذكي بالذكاء الاصطناعي العثور على الإجابات أسهل.',
+      placeholder: 'أدخل سؤالك + طراز الجهاز.',
       chooseLanguage: 'اللغة'
     }
   };
@@ -217,7 +217,9 @@
       ['New Chat', text.newChat],
       ['需求文档', text.model],
       ['智能问答', text.model],
-      ['公开访客专用：只根据需求文档知识库回答', text.description]
+      ['Smart Q&A', text.model],
+      ['公开访客专用：只根据需求文档知识库回答', text.description],
+      ['For public visitors: answers are based only on the requirements knowledge base', text.description]
     ];
     replacements.forEach(([from, to]) => replaceTextInSmallNodes(from, to));
   }
