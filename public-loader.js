@@ -267,8 +267,16 @@
     const text = UI_TEXT[lang.code] || UI_TEXT['zh-CN'];
     const switcher = document.getElementById('public-language-switcher');
     if (switcher) {
-      switcher.style.setProperty('top', '12px', 'important');
-      switcher.style.setProperty('right', window.innerWidth <= 640 ? '12px' : '64px', 'important');
+      switcher.style.setProperty('top', window.innerWidth <= 640 ? '10px' : '14px', 'important');
+      switcher.style.setProperty('right', window.innerWidth <= 640 ? '12px' : '24px', 'important');
+      const select = switcher.querySelector('select');
+      if (select) {
+        select.style.setProperty('height', '32px', 'important');
+        select.style.setProperty('min-width', '104px', 'important');
+        select.style.setProperty('padding', '0 10px', 'important');
+        select.style.setProperty('font-size', '13px', 'important');
+        select.style.setProperty('font-weight', '600', 'important');
+      }
     }
     document.title = text.title;
     document.documentElement.lang = lang.code;
@@ -343,19 +351,21 @@
           if (topBar) {
             topBar.dataset.publicTopBar = 'true';
             topBar.style.setProperty('background', '#8ec43c', 'important');
-            topBar.style.setProperty('box-shadow', '0 1px 0 rgb(0 0 0 / 12%)', 'important');
-            topBar.style.setProperty('height', window.innerWidth <= 640 ? '52px' : '56px', 'important');
+            topBar.style.setProperty('border-bottom', '1px solid #78aa2f', 'important');
+            topBar.style.setProperty('box-shadow', '0 3px 12px rgb(74 106 25 / 16%)', 'important');
+            topBar.style.setProperty('height', window.innerWidth <= 640 ? '52px' : '60px', 'important');
             topBar.style.setProperty('left', '0', 'important');
-            topBar.style.setProperty('padding', window.innerWidth <= 640 ? '0 112px 0 12px' : '0 190px 0 20px', 'important');
+            topBar.style.setProperty('padding', window.innerWidth <= 640 ? '0 116px 0 16px' : '0 210px 0 24px', 'important');
             topBar.style.setProperty('position', 'fixed', 'important');
             topBar.style.setProperty('right', '0', 'important');
             topBar.style.setProperty('top', '0', 'important');
             topBar.style.setProperty('z-index', '9990', 'important');
           }
           node.dataset.publicChatTitle = 'true';
-          node.style.setProperty('font-size', '24px', 'important');
-          node.style.setProperty('line-height', '1.25', 'important');
-          node.style.setProperty('font-weight', '600', 'important');
+          node.style.setProperty('color', '#20340f', 'important');
+          node.style.setProperty('font-size', window.innerWidth <= 640 ? '16px' : '18px', 'important');
+          node.style.setProperty('line-height', '1.2', 'important');
+          node.style.setProperty('font-weight', '700', 'important');
         }
       }
       if (node.children.length === 0 && (node.textContent || '').trim() === text.description) {
