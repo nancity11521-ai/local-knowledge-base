@@ -215,6 +215,11 @@
         placeholder.setAttribute('data-placeholder', text.placeholder);
       }
     });
+    document.querySelectorAll(
+      'button[aria-label="Voice Input"], button[aria-label="语音输入"], button[aria-label="Voice Mode"], button[aria-label="语音模式"]'
+    ).forEach((button) => {
+      button.style.setProperty('display', 'none', 'important');
+    });
 
     const replacements = [
       ['在线问答', text.title],
