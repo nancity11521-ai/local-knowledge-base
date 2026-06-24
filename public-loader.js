@@ -16,7 +16,7 @@
       title: '在线问答',
       newChat: '新对话',
       model: 'GMK AI客服',
-      description: 'Ai 智能搜索  问AI答案更轻松。',
+      description: 'Ai 智能搜索：问AI答案更轻松。',
       placeholder: '请输入您的问题+设备型号。',
       chooseLanguage: '语言'
     },
@@ -199,6 +199,7 @@
     document.body.dataset.publicLanguage = lang.code;
     document.body.dataset.publicTitle = text.title;
     document.body.dataset.publicModel = text.model;
+    document.documentElement.style.setProperty('--public-chat-placeholder', JSON.stringify(text.placeholder));
     document.querySelectorAll('#sidebar-webui-name').forEach((node) => {
       node.dataset.publicTitle = text.title;
     });
@@ -210,7 +211,9 @@
       }
     });
     document.querySelectorAll('#chat-input [data-placeholder]').forEach((placeholder) => {
-      placeholder.setAttribute('data-placeholder', text.placeholder);
+      if (placeholder.getAttribute('data-placeholder') !== text.placeholder) {
+        placeholder.setAttribute('data-placeholder', text.placeholder);
+      }
     });
 
     const replacements = [
@@ -234,6 +237,25 @@
     });
   }
 
+  function watchDynamicContent() {
+    if (window.__publicLanguageObserver) return;
+    let renderQueued = false;
+    window.__publicLanguageObserver = new MutationObserver(() => {
+      if (renderQueued) return;
+      renderQueued = true;
+      requestAnimationFrame(() => {
+        renderQueued = false;
+        applyVisibleLanguage();
+      });
+    });
+    window.__publicLanguageObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-placeholder']
+    });
+  }
+
   function init() {
     if (/^\/c\//.test(location.pathname)) {
       const lang = getLanguage();
@@ -243,6 +265,7 @@
     setLanguage(getLanguage(), false);
     patchFetch();
     scheduleRender(true);
+    watchDynamicContent();
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;

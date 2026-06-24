@@ -96,6 +96,11 @@ nav button:not([aria-label]):not([aria-haspopup]) {
   display: none !important;
 }
 
+/* Keep the public prompt text stable when Open WebUI rebuilds the rich-text editor. */
+#chat-input p.is-editor-empty::before {
+  content: var(--public-chat-placeholder) !important;
+}
+
 /* Hide workspace/admin-style shortcuts from the public sidebar. */
 a[href="/workspace"],
 a[href="/notes"],
