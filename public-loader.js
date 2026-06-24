@@ -265,6 +265,11 @@
   function applyVisibleLanguage() {
     const lang = activeLanguage();
     const text = UI_TEXT[lang.code] || UI_TEXT['zh-CN'];
+    const switcher = document.getElementById('public-language-switcher');
+    if (switcher) {
+      switcher.style.setProperty('top', '12px', 'important');
+      switcher.style.setProperty('right', window.innerWidth <= 640 ? '12px' : '64px', 'important');
+    }
     document.title = text.title;
     document.documentElement.lang = lang.code;
     document.documentElement.dir = lang.dir;
