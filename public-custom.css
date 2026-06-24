@@ -109,6 +109,12 @@ button[aria-label="语音模式"] {
   display: none !important;
 }
 
+/* Keep the supporting line visually secondary to the GMK heading. */
+[data-public-subtitle="true"] {
+  font-size: 20px !important;
+  line-height: 1.4 !important;
+}
+
 /* Hide workspace/admin-style shortcuts from the public sidebar. */
 a[href="/workspace"],
 a[href="/notes"],

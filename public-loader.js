@@ -233,6 +233,13 @@
       ['For public visitors: answers are based only on the requirements knowledge base', text.description]
     ];
     replacements.forEach(([from, to]) => replaceTextInSmallNodes(from, to));
+    document.querySelectorAll('div, p, span').forEach((node) => {
+      if (node.children.length === 0 && (node.textContent || '').trim() === text.description) {
+        node.dataset.publicSubtitle = 'true';
+        node.style.setProperty('font-size', '20px', 'important');
+        node.style.setProperty('line-height', '1.4', 'important');
+      }
+    });
   }
 
   function scheduleRender(force) {
