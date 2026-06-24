@@ -125,6 +125,12 @@ button[aria-label*="صوت"] {
   line-height: 1.2 !important;
 }
 
+[data-public-chat-title="true"] {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+}
+
 /* Hide workspace/admin-style shortcuts from the public sidebar. */
 a[href="/workspace"],
 a[href="/notes"],

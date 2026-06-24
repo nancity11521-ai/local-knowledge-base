@@ -320,10 +320,25 @@
     replacements.forEach(([from, to]) => replaceTextInSmallNodes(from, to));
     document.querySelectorAll('div, p, span').forEach((node) => {
       if (node.children.length === 0 && (node.textContent || '').trim() === text.model) {
-        node.dataset.publicHeroTitle = 'true';
-        node.style.setProperty('font-size', '40px', 'important');
-        node.style.setProperty('line-height', '1.2', 'important');
-        node.style.setProperty('font-weight', '600', 'important');
+        delete node.dataset.publicHeroTitle;
+        delete node.dataset.publicChatTitle;
+        node.style.removeProperty('font-size');
+        node.style.removeProperty('line-height');
+        node.style.removeProperty('font-weight');
+
+        const isWelcomeTitle = location.pathname === '/' && node.closest('.m-auto.w-full');
+        const isChatHeaderTitle = /^\/c\//.test(location.pathname) && node.closest('nav');
+        if (isWelcomeTitle) {
+          node.dataset.publicHeroTitle = 'true';
+          node.style.setProperty('font-size', '40px', 'important');
+          node.style.setProperty('line-height', '1.2', 'important');
+          node.style.setProperty('font-weight', '600', 'important');
+        } else if (isChatHeaderTitle) {
+          node.dataset.publicChatTitle = 'true';
+          node.style.setProperty('font-size', '24px', 'important');
+          node.style.setProperty('line-height', '1.25', 'important');
+          node.style.setProperty('font-weight', '600', 'important');
+        }
       }
       if (node.children.length === 0 && (node.textContent || '').trim() === text.description) {
         node.dataset.publicSubtitle = 'true';
