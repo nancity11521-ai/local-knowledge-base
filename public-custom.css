@@ -115,6 +115,12 @@ button[aria-label="语音模式"] {
   line-height: 1.4 !important;
 }
 
+[data-public-hero-title="true"] {
+  font-size: 40px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+
 /* Hide workspace/admin-style shortcuts from the public sidebar. */
 a[href="/workspace"],
 a[href="/notes"],

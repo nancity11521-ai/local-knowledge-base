@@ -234,6 +234,12 @@
     ];
     replacements.forEach(([from, to]) => replaceTextInSmallNodes(from, to));
     document.querySelectorAll('div, p, span').forEach((node) => {
+      if (node.children.length === 0 && (node.textContent || '').trim() === text.model) {
+        node.dataset.publicHeroTitle = 'true';
+        node.style.setProperty('font-size', '40px', 'important');
+        node.style.setProperty('line-height', '1.2', 'important');
+        node.style.setProperty('font-weight', '600', 'important');
+      }
       if (node.children.length === 0 && (node.textContent || '').trim() === text.description) {
         node.dataset.publicSubtitle = 'true';
         node.style.setProperty('font-size', '20px', 'important');
