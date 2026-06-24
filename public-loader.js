@@ -16,6 +16,7 @@
       title: '在线问答',
       newChat: '新对话',
       model: '智能问答',
+      description: '公开访客专用：只根据需求文档知识库回答',
       placeholder: '请输入你的问题',
       chooseLanguage: '语言'
     },
@@ -23,6 +24,7 @@
       title: 'Online Q&A',
       newChat: 'New chat',
       model: 'Smart Q&A',
+      description: 'For public visitors: answers are based only on the requirements knowledge base',
       placeholder: 'Ask your question',
       chooseLanguage: 'Language'
     },
@@ -30,6 +32,7 @@
       title: 'オンラインQ&A',
       newChat: '新しい会話',
       model: 'スマートQ&A',
+      description: '公開訪問者向け：要件文書のナレッジベースのみに基づいて回答します',
       placeholder: '質問を入力してください',
       chooseLanguage: '言語'
     },
@@ -37,6 +40,7 @@
       title: '온라인 Q&A',
       newChat: '새 대화',
       model: '스마트 Q&A',
+      description: '공개 방문자 전용: 요구사항 문서 지식 베이스만을 기반으로 답변합니다',
       placeholder: '질문을 입력하세요',
       chooseLanguage: '언어'
     },
@@ -44,6 +48,7 @@
       title: 'Preguntas en línea',
       newChat: 'Nuevo chat',
       model: 'Preguntas inteligentes',
+      description: 'Para visitantes públicos: responde únicamente según la base de conocimientos de requisitos',
       placeholder: 'Escribe tu pregunta',
       chooseLanguage: 'Idioma'
     },
@@ -51,6 +56,7 @@
       title: 'Questions en ligne',
       newChat: 'Nouvelle discussion',
       model: 'Questions intelligentes',
+      description: 'Pour les visiteurs publics : réponses fondées uniquement sur la base de connaissances des exigences',
       placeholder: 'Posez votre question',
       chooseLanguage: 'Langue'
     },
@@ -58,6 +64,7 @@
       title: 'Online-Fragen',
       newChat: 'Neuer Chat',
       model: 'Intelligente Fragen',
+      description: 'Für öffentliche Besucher: Antworten basieren ausschließlich auf der Wissensdatenbank der Anforderungen',
       placeholder: 'Stellen Sie Ihre Frage',
       chooseLanguage: 'Sprache'
     },
@@ -65,6 +72,7 @@
       title: 'أسئلة وأجوبة',
       newChat: 'محادثة جديدة',
       model: 'أسئلة ذكية',
+      description: 'للزوار العامّين: تعتمد الإجابات فقط على قاعدة معرفة مستندات المتطلبات',
       placeholder: 'اكتب سؤالك',
       chooseLanguage: 'اللغة'
     }
@@ -203,7 +211,8 @@
       ['新对话', text.newChat],
       ['New Chat', text.newChat],
       ['需求文档', text.model],
-      ['智能问答', text.model]
+      ['智能问答', text.model],
+      ['公开访客专用：只根据需求文档知识库回答', text.description]
     ];
     replacements.forEach(([from, to]) => replaceTextInSmallNodes(from, to));
   }
