@@ -209,6 +209,9 @@
         input.setAttribute('placeholder', text.placeholder);
       }
     });
+    document.querySelectorAll('#chat-input [data-placeholder]').forEach((placeholder) => {
+      placeholder.setAttribute('data-placeholder', text.placeholder);
+    });
 
     const replacements = [
       ['在线问答', text.title],
