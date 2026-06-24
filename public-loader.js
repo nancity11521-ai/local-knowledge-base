@@ -120,19 +120,39 @@
   function applyLanguageInstruction(payload) {
     const instruction = answerInstruction();
     const marker = `[PUBLIC_RESPONSE_LANGUAGE:${getLanguage()}]`;
-    if (Array.isArray(payload.messages)) {
-      payload.messages = payload.messages.filter(
+    let marked = false;
+
+    function updateMessages(container, key) {
+      if (!Array.isArray(container?.[key])) return;
+      container[key] = container[key].filter(
         (message) => !(message?.role === 'system' && /RESPONSE_LANGUAGE:|Answer strictly in/.test(String(message?.content || '')))
       );
-      payload.messages.unshift({ role: 'system', content: instruction });
-      const userMessage = [...payload.messages].reverse().find((message) => message?.role === 'user');
+      container[key].unshift({ role: 'system', content: instruction });
+      const userMessage = [...container[key]].reverse().find((message) => message?.role === 'user');
       if (userMessage && typeof userMessage.content === 'string' && !userMessage.content.includes('[PUBLIC_RESPONSE_LANGUAGE:')) {
         userMessage.content = `${marker}\n${userMessage.content}`;
+        marked = true;
       }
-    } else if (typeof payload.prompt === 'string') {
+    }
+
+    function visit(value) {
+      if (!value || typeof value !== 'object') return;
+      updateMessages(value, 'messages');
+      Object.values(value).forEach((child) => {
+        if (child && typeof child === 'object') visit(child);
+      });
+    }
+
+    visit(payload);
+    if (!marked && typeof payload.prompt === 'string') {
       payload.prompt = `${marker}\n${instruction}\n\n${payload.prompt.replace(/^RESPONSE_LANGUAGE:.*\n\n/s, '')}`;
+      marked = true;
+    }
+    if (!marked && payload.message && typeof payload.message.content === 'string') {
+      payload.message.content = `${marker}\n${payload.message.content}`;
     }
     payload.language = getLanguage();
+    payload.public_response_language = getLanguage();
     return payload;
   }
 
@@ -163,6 +183,58 @@
       }
       return originalFetch(input, init);
     };
+  }
+
+  function markEditorQuestion() {
+    const editor = document.getElementById('chat-input');
+    if (!editor) return;
+    const marker = `[PUBLIC_RESPONSE_LANGUAGE:${getLanguage()}]`;
+    const question = (editor.innerText || '').trim();
+    if (!question || question.includes('[PUBLIC_RESPONSE_LANGUAGE:')) return;
+    editor.textContent = `${marker}\n${question}`;
+    editor.dispatchEvent(new InputEvent('input', {
+      bubbles: true,
+      inputType: 'insertText',
+      data: marker
+    }));
+  }
+
+  function patchChatSubmit() {
+    if (window.__publicLanguageSubmitPatched) return;
+    window.__publicLanguageSubmitPatched = true;
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && event.target?.closest?.('#chat-input')) {
+        const editor = document.getElementById('chat-input');
+        if ((editor?.innerText || '').includes('[PUBLIC_RESPONSE_LANGUAGE:')) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        markEditorQuestion();
+        setTimeout(() => {
+          editor?.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            bubbles: true,
+            cancelable: true
+          }));
+        }, 30);
+      }
+    }, true);
+    document.addEventListener('click', (event) => {
+      const button = event.target?.closest?.('button');
+      if (!button || !document.getElementById('chat-input')) return;
+      const editorContainer = document.getElementById('chat-input')?.closest('form, .relative, .w-full');
+      if (!editorContainer?.contains(button) || button.dataset.publicLanguageResubmit === 'true') return;
+      const editor = document.getElementById('chat-input');
+      if ((editor?.innerText || '').includes('[PUBLIC_RESPONSE_LANGUAGE:')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      markEditorQuestion();
+      button.dataset.publicLanguageResubmit = 'true';
+      setTimeout(() => {
+        button.click();
+        delete button.dataset.publicLanguageResubmit;
+      }, 30);
+    }, true);
   }
 
   function makeSwitcher() {
@@ -220,6 +292,13 @@
     ).forEach((button) => {
       button.style.setProperty('display', 'none', 'important');
     });
+    document.querySelectorAll('p').forEach((node) => {
+      if (node.closest('#chat-input')) return;
+      const value = node.textContent || '';
+      if (/^\[PUBLIC_RESPONSE_LANGUAGE:[A-Za-z]{2}-[A-Za-z]{2}\]\s*/.test(value)) {
+        node.textContent = value.replace(/^\[PUBLIC_RESPONSE_LANGUAGE:[A-Za-z]{2}-[A-Za-z]{2}\]\s*/, '');
+      }
+    });
 
     const replacements = [
       ['在线问答', text.title],
@@ -274,19 +353,24 @@
     });
   }
 
+  function keepLanguageInUrl() {
+    const url = new URL(location.href);
+    if (url.searchParams.get('lang') === getLanguage()) return;
+    url.searchParams.set('lang', getLanguage());
+    history.replaceState(history.state, '', url.toString());
+  }
+
   function init() {
-    if (/^\/c\//.test(location.pathname)) {
-      const lang = getLanguage();
-      location.replace(`/?models=requirement-docs-kb&lang=${encodeURIComponent(lang)}`);
-      return;
-    }
     setLanguage(getLanguage(), false);
+    keepLanguageInUrl();
     patchFetch();
+    patchChatSubmit();
     scheduleRender(true);
     watchDynamicContent();
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
+      keepLanguageInUrl();
       scheduleRender(false);
       if (attempts >= 8) clearInterval(timer);
     }, 800);
