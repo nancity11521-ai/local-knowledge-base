@@ -4,6 +4,7 @@
   let checking = false;
 
   function removeAnalyticsEntry() {
+    document.getElementById('admin-analytics-entry-row')?.remove();
     document.getElementById('admin-analytics-entry')?.remove();
   }
 
@@ -17,25 +18,30 @@
       return;
     }
     if (document.getElementById('admin-analytics-entry')) return;
-    const link = document.createElement('a');
+    const workspaceLink = document.querySelector('a[href="/workspace"]');
+    if (!workspaceLink) return;
+    const link = workspaceLink.cloneNode(true);
     link.id = 'admin-analytics-entry';
     link.href = href;
-    link.textContent = '问题分析';
-    link.style.cssText = [
-      'position:fixed',
-      'right:18px',
-      'top:82px',
-      'z-index:9999',
-      'background:#111827',
-      'color:#fff',
-      'text-decoration:none',
-      'font-size:13px',
-      'font-weight:700',
-      'padding:9px 12px',
-      'border-radius:7px',
-      'box-shadow:0 8px 22px rgba(15,23,42,.16)'
-    ].join(';');
-    document.body.appendChild(link);
+    link.removeAttribute('aria-current');
+    link.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 3v18h18"></path>
+        <path d="m7 16 4-4 3 3 5-7"></path>
+      </svg>
+      <span>问题分析</span>
+    `;
+    const row = workspaceLink.parentElement;
+    if (row && row.children.length === 1) {
+      const analyticsRow = row.cloneNode(false);
+      analyticsRow.id = 'admin-analytics-entry-row';
+      analyticsRow.appendChild(link);
+      row.insertAdjacentElement('afterend', analyticsRow);
+    } else {
+      workspaceLink.insertAdjacentElement('afterend', link);
+    }
   }
 
   async function checkAdmin() {
