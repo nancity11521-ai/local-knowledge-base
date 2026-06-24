@@ -14,13 +14,34 @@
   z-index: 9999;
 }
 
+[data-public-top-bar="true"] {
+  background: #8ec43c !important;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 12%);
+  height: 56px !important;
+  left: 0;
+  padding: 0 190px 0 20px !important;
+  position: fixed !important;
+  right: 0;
+  top: 0;
+  z-index: 9990 !important;
+}
+
+[data-public-top-bar="true"] [data-public-chat-title="true"] {
+  color: #18210d !important;
+}
+
+[data-public-top-bar="true"] button[aria-label="User menu"],
+[data-public-top-bar="true"] button[aria-label="用户菜单"] {
+  display: none !important;
+}
+
 .dark #public-language-switcher {
   background: transparent;
   border-color: transparent;
 }
 
 .public-language-label {
-  color: #6b7280;
+  color: #18210d;
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
@@ -42,6 +63,13 @@
   line-height: 28px;
   min-width: 92px;
   padding: 0 6px;
+}
+
+@media (max-width: 640px) {
+  [data-public-top-bar="true"] {
+    height: 52px !important;
+    padding: 0 112px 0 12px !important;
+  }
 }
 
 .dark #public-language-select {

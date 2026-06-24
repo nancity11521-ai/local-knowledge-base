@@ -332,13 +332,26 @@
         node.style.removeProperty('font-weight');
 
         const isWelcomeTitle = location.pathname === '/' && node.closest('.m-auto.w-full');
-        const isChatHeaderTitle = /^\/c\//.test(location.pathname) && node.closest('nav');
+        const isTopBarTitle = node.closest('nav');
         if (isWelcomeTitle) {
           node.dataset.publicHeroTitle = 'true';
           node.style.setProperty('font-size', '40px', 'important');
           node.style.setProperty('line-height', '1.2', 'important');
           node.style.setProperty('font-weight', '600', 'important');
-        } else if (isChatHeaderTitle) {
+        } else if (isTopBarTitle) {
+          const topBar = node.closest('nav');
+          if (topBar) {
+            topBar.dataset.publicTopBar = 'true';
+            topBar.style.setProperty('background', '#8ec43c', 'important');
+            topBar.style.setProperty('box-shadow', '0 1px 0 rgb(0 0 0 / 12%)', 'important');
+            topBar.style.setProperty('height', window.innerWidth <= 640 ? '52px' : '56px', 'important');
+            topBar.style.setProperty('left', '0', 'important');
+            topBar.style.setProperty('padding', window.innerWidth <= 640 ? '0 112px 0 12px' : '0 190px 0 20px', 'important');
+            topBar.style.setProperty('position', 'fixed', 'important');
+            topBar.style.setProperty('right', '0', 'important');
+            topBar.style.setProperty('top', '0', 'important');
+            topBar.style.setProperty('z-index', '9990', 'important');
+          }
           node.dataset.publicChatTitle = 'true';
           node.style.setProperty('font-size', '24px', 'important');
           node.style.setProperty('line-height', '1.25', 'important');
