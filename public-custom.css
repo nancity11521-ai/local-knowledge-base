@@ -433,10 +433,12 @@ body.public-home #message-input-container {
   gap: 7px;
   height: 34px;
   left: 34px;
+  line-height: 1;
   padding-right: 26px;
   pointer-events: none;
   position: absolute;
-  top: 20px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 3;
 }
 
