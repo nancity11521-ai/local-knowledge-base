@@ -356,13 +356,16 @@ body.public-home nav[data-public-top-bar="true"] [data-public-chat-title="true"]
 }
 
 body.public-home #public-language-switcher {
+  align-items: center;
   background: #fff;
   border: 1px solid #ececec;
   border-radius: 999px;
   box-shadow: 0 2px 10px rgb(0 0 0 / 5%);
+  display: flex;
   padding: 5px 8px;
   right: 34px !important;
-  top: 15px !important;
+  top: 38px !important;
+  transform: translateY(-50%);
 }
 
 body.public-home .public-language-label {
