@@ -398,8 +398,10 @@
     const text = UI_TEXT[lang.code] || UI_TEXT['zh-CN'];
     const switcher = document.getElementById('public-language-switcher');
     if (switcher) {
-      switcher.style.setProperty('top', window.innerWidth <= 640 ? '10px' : '14px', 'important');
+      const isHome = location.pathname === '/';
+      switcher.style.setProperty('top', isHome ? (window.innerWidth <= 640 ? '26px' : '38px') : (window.innerWidth <= 640 ? '10px' : '14px'), 'important');
       switcher.style.setProperty('right', window.innerWidth <= 640 ? '12px' : '24px', 'important');
+      switcher.style.setProperty('transform', isHome ? 'translateY(-50%)' : 'none', 'important');
       const select = switcher.querySelector('select');
       if (select) {
         select.style.setProperty('height', '32px', 'important');
