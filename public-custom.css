@@ -388,12 +388,19 @@ body.public-home .m-auto.w-full {
 }
 
 body.public-home #chat-input {
+  align-items: center !important;
+  display: flex !important;
   min-height: 72px !important;
+  padding-bottom: 0 !important;
   padding-left: 210px !important;
+  padding-top: 0 !important;
 }
 
 body.public-home #chat-input p {
   font-size: 19px !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  width: 100%;
 }
 
 body.public-home #chat-input p.is-editor-empty::before {
