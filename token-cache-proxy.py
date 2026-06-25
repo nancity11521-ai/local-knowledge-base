@@ -55,7 +55,45 @@ def db():
         )
         """
     )
+    con.execute(
+        """
+        create table if not exists access_log (
+            id integer primary key autoincrement,
+            event text not null,
+            session_id text,
+            language text,
+            created_at integer not null
+        )
+        """
+    )
     return con
+
+def access_stats():
+    with DB_LOCK:
+        with db() as con:
+            rows = con.execute(
+                """
+                select date(created_at, 'unixepoch', 'localtime') as day,
+                       sum(case when event = 'visit' then 1 else 0 end) as visits,
+                       count(distinct case when event = 'visit' then session_id end) as visitors,
+                       sum(case when event = 'consultation' then 1 else 0 end) as consultations
+                from access_log group by day order by day desc limit 366
+                """
+            ).fetchall()
+            languages = con.execute(
+                """
+                select language, count(*) from access_log
+                where event = 'consultation' and language is not null
+                group by language order by count(*) desc
+                """
+            ).fetchall()
+    return {
+        "days": [
+            {"day": row[0], "visits": row[1] or 0, "visitors": row[2] or 0, "consultations": row[3] or 0}
+            for row in rows
+        ],
+        "languages": [{"language": row[0], "count": row[1]} for row in languages],
+    }
 
 def bump(name, amount=1):
     try:
@@ -137,6 +175,14 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print("[%s] %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), fmt % args), flush=True)
 
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("access-control-allow-origin", "*")
+        self.send_header("access-control-allow-methods", "GET, POST, OPTIONS")
+        self.send_header("access-control-allow-headers", "content-type")
+        self.send_header("content-length", "0")
+        self.end_headers()
+
     def do_GET(self):
         if self.path == "/health":
             body = b"ok"
@@ -145,9 +191,39 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
+        if self.path.startswith("/analytics/stats"):
+            body = json.dumps(access_stats(), ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("access-control-allow-origin", "*")
+            self.send_header("content-type", "application/json; charset=utf-8")
+            self.send_header("content-length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         self.proxy(cacheable=False)
 
     def do_POST(self):
+        if self.path == "/analytics/visit":
+            length = int(self.headers.get("content-length", "0") or "0")
+            try:
+                payload = json.loads(self.rfile.read(length) or b"{}")
+                with DB_LOCK:
+                    with db() as con:
+                        con.execute(
+                            "insert into access_log(event, session_id, language, created_at) values ('visit', ?, ?, ?)",
+                            (str(payload.get("session_id", ""))[:128], str(payload.get("language", ""))[:32], int(time.time())),
+                        )
+                body = b'{"ok":true}'
+                self.send_response(200)
+            except Exception:
+                body = b'{"ok":false}'
+                self.send_response(400)
+            self.send_header("access-control-allow-origin", "*")
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         self.proxy(cacheable=self.path.endswith("/chat/completions"))
 
     def proxy(self, cacheable=False):
@@ -155,6 +231,17 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length) if length else b""
         if self.path.endswith("/chat/completions"):
             raw = enforce_response_language(raw)
+            try:
+                payload = json.loads(raw)
+                language = payload.get("public_response_language")
+                with DB_LOCK:
+                    with db() as con:
+                        con.execute(
+                            "insert into access_log(event, language, created_at) values ('consultation', ?, ?)",
+                            (str(language or "其他")[:32], int(time.time())),
+                        )
+            except Exception:
+                pass
         key = cache_key(self.path, raw)
         now = int(time.time())
 
