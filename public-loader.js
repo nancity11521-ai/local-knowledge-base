@@ -345,7 +345,7 @@
       const sidebar = document.createElement('aside');
       sidebar.id = 'public-home-sidebar';
       sidebar.innerHTML = `
-        <img id="public-brand-logo" src="/static/gmktec-logo.jpg" alt="GMKtec">
+        <img id="public-brand-logo" src="/static/gmktec-logo.png" alt="GMKtec">
         <a id="public-new-chat" href="/?models=requirement-docs-kb&lang=${getLanguage()}">
           <span aria-hidden="true">＋</span>${UI_TEXT[getLanguage()]?.newChat || '新对话'}
         </a>

@@ -278,8 +278,7 @@ body.public-home {
   display: block;
   height: auto;
   margin: 34px 24px 28px;
-  mix-blend-mode: multiply;
-  width: 160px;
+  width: 172px;
 }
 
 #public-new-chat {

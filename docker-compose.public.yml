@@ -36,7 +36,7 @@ services:
       - open-webui-public-data:/app/backend/data
       - ./public-index.html:/app/build/index.html:ro
       - ./seed-docs:/seed-docs:ro
-      - ./assets/gmktec-logo.jpg:/app/backend/open_webui/static/gmktec-logo.jpg:ro
+      - ./assets/gmktec-logo.png:/app/backend/open_webui/static/gmktec-logo.png:ro
       - ./public-custom.css:/app/backend/open_webui/static/custom.css:ro
       - ./public-loader.js:/app/backend/open_webui/static/loader.js:ro
 
