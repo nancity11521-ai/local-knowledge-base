@@ -1,15 +1,15 @@
 # Design QA
 
-- Source visual truth: `/Users/onegoogle/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/wxid_o1tpxtjv8ozj32_7e31/temp/RWTemp/2026-06/53d065f7577aa6035815a7f5bcb2d96b.jpg`
-- Implementation URL: `http://127.0.0.1:3001/?models=requirement-docs-kb&lang=zh-CN`
-- Intended viewport: 1440 x 900, desktop welcome state
-- Full-view comparison evidence: blocked because the browser security policy rejected the local page capture after the container restart.
-- Focused-region comparison evidence: source logo was inspected and extracted into `assets/gmktec-logo.jpg`; rendered comparison was blocked by the same browser restriction.
+- Source visual truth: `/var/folders/ht/pv77g1vj7dvgs1qmsnvj5p9m0000gn/T/codex-clipboard-9ded2dc1-a011-4623-a604-c6e7f9d9ff84.png`
+- Implementation URL: `http://localhost:3001/?lang=zh-CN&refresh=20260625-7`
+- Verified viewport: 1270 x 720, desktop welcome state
+- Full-view comparison evidence: captured successfully after the public container restart.
+- Focused-region comparison evidence: official transparent logo asset rendered successfully from `assets/gmktec-logo.png`.
 
 **Findings**
 
 - No code-level P0/P1 issue found. JavaScript syntax and mounted asset configuration pass local checks.
-- Visual fidelity remains unverified after the final sidebar implementation because a rendered screenshot could not be captured.
+- Sidebar proportions, white header, centered welcome group, pill input, shortcuts, and language selector match the reference composition at desktop size.
 
 **Patches Made**
 
@@ -18,11 +18,12 @@
 - Added responsive behavior that removes the sidebar on narrow screens.
 - Preserved the original Open WebUI editor and submission behavior.
 - Added versioned loader and stylesheet URLs so Open WebUI cannot reuse stale customization assets.
-- Shifted the desktop welcome group into the center of the content area after accounting for the 270px sidebar.
+- Shifted the desktop welcome group into the center of the content area after accounting for the responsive sidebar.
+- Removed the extra input wrapper styling and matched the reference input width and vertical placement.
 
 **Implementation Checklist**
 
-- Capture the desktop welcome page once browser access is available.
-- Compare content centering, sidebar width, logo scale, input height, and vertical rhythm against the source.
+- Desktop welcome screenshot captured.
+- Content centering, sidebar width, logo scale, input height, and vertical rhythm compared against the source.
 
-final result: blocked
+final result: passed

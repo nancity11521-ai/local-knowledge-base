@@ -270,15 +270,15 @@ body.public-home {
   left: 0;
   position: fixed;
   top: 0;
-  width: 270px !important;
+  width: clamp(208px, 16.4vw, 336px) !important;
   z-index: 9995;
 }
 
 #public-brand-logo {
   display: block;
   height: auto;
-  margin: 34px 24px 28px;
-  width: 172px;
+  margin: 42px 0 40px 50px;
+  width: 106px;
 }
 
 #public-new-chat {
@@ -347,7 +347,8 @@ body.public-home nav[data-public-top-bar="true"] {
   background: #fff !important;
   border-bottom-color: #e7e7e7 !important;
   box-shadow: none !important;
-  left: 270px !important;
+  height: 76px !important;
+  left: clamp(208px, 16.4vw, 336px) !important;
 }
 
 body.public-home nav[data-public-top-bar="true"] [data-public-chat-title="true"] {
@@ -388,8 +389,8 @@ body.public-home [data-public-subtitle="true"] {
 }
 
 body.public-home .m-auto.w-full {
-  max-width: 760px !important;
-  transform: translate(118px, 28px);
+  max-width: 650px !important;
+  transform: translate(50px, 0);
 }
 
 body.public-home #chat-input {
@@ -414,6 +415,14 @@ body.public-home [data-public-search-shell="true"] {
   border-radius: 999px !important;
   box-shadow: 0 0 0 3px rgb(142 196 60 / 9%) !important;
   min-height: 76px !important;
+}
+
+body.public-home #message-input-container {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
 }
 
 #public-search-label {

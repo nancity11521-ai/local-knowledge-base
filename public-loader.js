@@ -476,14 +476,15 @@
           node.dataset.publicHeroTitle = 'true';
           node.style.setProperty('font-size', '40px', 'important');
           node.style.setProperty('line-height', '1.2', 'important');
-          node.style.setProperty('font-weight', '600', 'important');
+          node.style.setProperty('font-weight', '400', 'important');
         } else if (isTopBarTitle) {
           const topBar = node.closest('nav');
           if (topBar) {
             topBar.dataset.publicTopBar = 'true';
-            topBar.style.setProperty('background', '#8ec43c', 'important');
-            topBar.style.setProperty('border-bottom', '1px solid #78aa2f', 'important');
-            topBar.style.setProperty('box-shadow', '0 3px 12px rgb(74 106 25 / 16%)', 'important');
+            const isHome = location.pathname === '/';
+            topBar.style.setProperty('background', isHome ? '#ffffff' : '#8ec43c', 'important');
+            topBar.style.setProperty('border-bottom', isHome ? '1px solid #e7e7e7' : '1px solid #78aa2f', 'important');
+            topBar.style.setProperty('box-shadow', isHome ? 'none' : '0 3px 12px rgb(74 106 25 / 16%)', 'important');
             topBar.style.setProperty('height', window.innerWidth <= 640 ? '52px' : '60px', 'important');
             topBar.style.setProperty('left', '0', 'important');
             topBar.style.setProperty('padding', window.innerWidth <= 640 ? '0 116px 0 16px' : '0 210px 0 24px', 'important');
