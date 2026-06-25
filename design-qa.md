@@ -17,6 +17,8 @@
 - Restyled the welcome title, subtitle, language control, question input, and shortcut actions to match the reference.
 - Added responsive behavior that removes the sidebar on narrow screens.
 - Preserved the original Open WebUI editor and submission behavior.
+- Added versioned loader and stylesheet URLs so Open WebUI cannot reuse stale customization assets.
+- Shifted the desktop welcome group into the center of the content area after accounting for the 270px sidebar.
 
 **Implementation Checklist**
 

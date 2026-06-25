@@ -390,6 +390,7 @@ body.public-home [data-public-subtitle="true"] {
 
 body.public-home .m-auto.w-full {
   max-width: 760px !important;
+  transform: translate(118px, 28px);
 }
 
 body.public-home #chat-input {
@@ -474,6 +475,7 @@ body.public-home [data-public-search-shell="true"] {
 
   body.public-home .m-auto.w-full {
     max-width: calc(100vw - 32px) !important;
+    transform: none;
   }
 
   body.public-home #chat-input {
