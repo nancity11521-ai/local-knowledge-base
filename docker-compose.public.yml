@@ -35,6 +35,7 @@ services:
     volumes:
       - open-webui-public-data:/app/backend/data
       - ./seed-docs:/seed-docs:ro
+      - ./assets/gmktec-logo.jpg:/app/backend/open_webui/static/gmktec-logo.jpg:ro
       - ./public-custom.css:/app/backend/open_webui/static/custom.css:ro
       - ./public-loader.js:/app/backend/open_webui/static/loader.js:ro
 

@@ -15,9 +15,9 @@
     'zh-CN': {
       title: '在线问答',
       newChat: '新对话',
-      model: 'GMK AI客服',
-      description: 'Ai 智能搜索：问AI答案更轻松。',
-      placeholder: '请输入您的问题+设备型号。',
+      model: 'GMKtec AI客服',
+      description: '问AI·7*24小时 智能服务',
+      placeholder: '请输入您的型号和问题',
       chooseLanguage: '语言'
     },
     'en-US': {
@@ -321,6 +321,59 @@
     wrapper.querySelector('select').addEventListener('change', (event) => setLanguage(event.target.value, true));
   }
 
+  function focusQuestionInput() {
+    const editor = document.getElementById('chat-input');
+    editor?.focus();
+  }
+
+  function enhancePublicHome() {
+    const isHome = location.pathname === '/';
+    document.body.classList.toggle('public-home', isHome);
+    if (!isHome) return;
+
+    if (!document.getElementById('public-home-sidebar')) {
+      const sidebar = document.createElement('aside');
+      sidebar.id = 'public-home-sidebar';
+      sidebar.innerHTML = `
+        <img id="public-brand-logo" src="/static/gmktec-logo.jpg" alt="GMKtec">
+        <a id="public-new-chat" href="/?models=requirement-docs-kb&lang=${getLanguage()}">
+          <span aria-hidden="true">＋</span>${UI_TEXT[getLanguage()]?.newChat || '新对话'}
+        </a>
+        <button id="public-current-chat" type="button">
+          <span aria-hidden="true">◯</span>
+          <strong>${UI_TEXT[getLanguage()]?.model || 'GMKtec AI客服'}</strong>
+          <time>刚刚</time>
+        </button>
+        <div id="public-history-label">历史对话</div>
+      `;
+      sidebar.querySelector('#public-current-chat').addEventListener('click', focusQuestionInput);
+      document.body.appendChild(sidebar);
+    }
+
+    const title = document.querySelector('[data-public-hero-title="true"]');
+    const welcome = title?.closest('.m-auto.w-full');
+    if (welcome && !document.getElementById('public-search-label')) {
+      const label = document.createElement('div');
+      label.id = 'public-search-label';
+      label.innerHTML = '<span>✦</span> AI·智搜';
+      const editor = document.getElementById('chat-input');
+      const inputShell = editor?.closest('.bg-white, form, .relative');
+      if (inputShell) inputShell.dataset.publicSearchShell = 'true';
+      inputShell?.prepend(label);
+
+      const shortcuts = document.createElement('div');
+      shortcuts.id = 'public-home-shortcuts';
+      ['问题查询', '设备故障', '教程解答'].forEach((text) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = text;
+        button.addEventListener('click', focusQuestionInput);
+        shortcuts.appendChild(button);
+      });
+      (inputShell || welcome).insertAdjacentElement('afterend', shortcuts);
+    }
+  }
+
   function replaceTextInSmallNodes(from, to) {
     document.querySelectorAll('button, a, label, span, div, h1, h2, h3').forEach((node) => {
       if (node.children.length > 2) return;
@@ -442,6 +495,7 @@
         node.style.setProperty('line-height', '1.4', 'important');
       }
     });
+    enhancePublicHome();
   }
 
   function scheduleRender(force) {

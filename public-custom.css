@@ -257,3 +257,236 @@ button:has(span):has(svg.lucide-chevron-down),
 button:has(span):has(svg.lucide-chevron-up) {
   display: none !important;
 }
+
+/* GMKtec public welcome screen. */
+body.public-home {
+  background: #fff !important;
+}
+
+#public-home-sidebar {
+  background: #f2f2f2 !important;
+  border-right: 1px solid #e4e4e4 !important;
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 270px !important;
+  z-index: 9995;
+}
+
+#public-brand-logo {
+  display: block;
+  height: auto;
+  margin: 34px 24px 28px;
+  mix-blend-mode: multiply;
+  width: 160px;
+}
+
+#public-new-chat {
+  align-items: center;
+  background: #fff !important;
+  border: 1px solid #e6e6e6 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 5%);
+  color: #222;
+  display: flex;
+  gap: 7px;
+  margin: 0 24px 8px !important;
+  min-height: 46px;
+  padding: 0 18px !important;
+  text-decoration: none;
+}
+
+#public-new-chat span {
+  color: #8ec43c;
+}
+
+#public-current-chat {
+  align-items: center;
+  background: #e4e4e4;
+  border: 0;
+  border-radius: 999px;
+  color: #333;
+  display: grid;
+  font-size: 13px;
+  grid-template-columns: 18px 1fr auto;
+  margin: 0 24px;
+  min-height: 46px;
+  padding: 0 16px;
+  text-align: left;
+  width: calc(100% - 48px);
+}
+
+#public-current-chat span {
+  color: #777;
+  font-size: 10px;
+}
+
+#public-current-chat strong {
+  font-weight: 500;
+}
+
+#public-current-chat time {
+  color: #999;
+  font-size: 12px;
+}
+
+#public-history-label {
+  bottom: 34px;
+  color: #333;
+  font-size: 13px;
+  left: 40px;
+  position: absolute;
+}
+
+#public-history-label::before {
+  content: "◷";
+  margin-right: 6px;
+}
+
+body.public-home nav[data-public-top-bar="true"] {
+  background: #fff !important;
+  border-bottom-color: #e7e7e7 !important;
+  box-shadow: none !important;
+  left: 270px !important;
+}
+
+body.public-home nav[data-public-top-bar="true"] [data-public-chat-title="true"] {
+  display: none !important;
+}
+
+body.public-home #public-language-switcher {
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 5%);
+  padding: 5px 8px;
+  right: 34px !important;
+  top: 15px !important;
+}
+
+body.public-home .public-language-label {
+  display: none;
+}
+
+body.public-home #public-language-select {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-width: 78px;
+}
+
+body.public-home [data-public-hero-title="true"] {
+  color: #080808 !important;
+  font-size: 46px !important;
+  font-weight: 400 !important;
+}
+
+body.public-home [data-public-subtitle="true"] {
+  color: #222 !important;
+  font-size: 18px !important;
+  margin-top: 12px !important;
+}
+
+body.public-home .m-auto.w-full {
+  max-width: 760px !important;
+}
+
+body.public-home #chat-input {
+  min-height: 72px !important;
+  padding-left: 210px !important;
+}
+
+body.public-home #chat-input p {
+  font-size: 19px !important;
+}
+
+body.public-home #chat-input p.is-editor-empty::before {
+  color: #999 !important;
+}
+
+body.public-home #chat-input:focus {
+  outline: none !important;
+}
+
+body.public-home [data-public-search-shell="true"] {
+  border: 1px solid #c7e8a5 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 0 0 3px rgb(142 196 60 / 9%) !important;
+  min-height: 76px !important;
+}
+
+#public-search-label {
+  align-items: center;
+  border-right: 1px solid #dedede;
+  display: flex;
+  font-size: 20px;
+  gap: 7px;
+  height: 34px;
+  left: 34px;
+  padding-right: 26px;
+  pointer-events: none;
+  position: absolute;
+  top: 20px;
+  z-index: 3;
+}
+
+#public-search-label span {
+  color: #8ec43c;
+}
+
+#public-home-shortcuts {
+  display: flex;
+  gap: 46px;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+#public-home-shortcuts button {
+  background: transparent;
+  border: 0;
+  color: #222;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px;
+}
+
+#public-home-shortcuts button:hover {
+  color: #6d9f25;
+}
+
+@media (max-width: 700px) {
+  body.public-home #sidebar {
+    display: none !important;
+  }
+
+  #public-home-sidebar {
+    display: none !important;
+  }
+
+  body.public-home nav[data-public-top-bar="true"] {
+    left: 0 !important;
+  }
+
+  body.public-home [data-public-hero-title="true"] {
+    font-size: 32px !important;
+  }
+
+  body.public-home .m-auto.w-full {
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  body.public-home #chat-input {
+    padding-left: 132px !important;
+  }
+
+  #public-search-label {
+    font-size: 15px;
+    left: 20px;
+    padding-right: 14px;
+  }
+
+  #public-home-shortcuts {
+    gap: 18px;
+  }
+}
