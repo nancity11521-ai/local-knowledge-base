@@ -1,0 +1,251 @@
+{
+  "generated_at": 1780622725,
+  "total_questions": 8,
+  "top_questions": [
+    {
+      "question": "卡logo了怎么办",
+      "normalized": "卡logo了怎么办",
+      "count": 2
+    },
+    {
+      "question": "电脑卡了怎么办",
+      "normalized": "电脑卡了怎么办",
+      "count": 2
+    },
+    {
+      "question": "你好",
+      "normalized": "你好",
+      "count": 1
+    },
+    {
+      "question": "我的电脑突然蓝屏死机了，要怎么修复",
+      "normalized": "我的电脑突然蓝屏死机了，要怎么修复",
+      "count": 1
+    },
+    {
+      "question": "电脑不开机应该怎么办",
+      "normalized": "电脑不开机应该怎么办",
+      "count": 1
+    },
+    {
+      "question": "卡机了怎么办",
+      "normalized": "卡机了怎么办",
+      "count": 1
+    }
+  ],
+  "top_models": [],
+  "top_types": [
+    {
+      "type": "寒暄/泛问",
+      "count": 4
+    },
+    {
+      "type": "开机/系统故障",
+      "count": 4
+    }
+  ],
+  "top_languages": [
+    {
+      "language": "中文",
+      "count": 8
+    }
+  ],
+  "questions_by_hour": [
+    {
+      "hour": "2026-06-04 07:00",
+      "count": 1
+    },
+    {
+      "hour": "2026-06-04 08:00",
+      "count": 3
+    },
+    {
+      "hour": "2026-06-04 09:00",
+      "count": 2
+    },
+    {
+      "hour": "2026-06-04 10:00",
+      "count": 2
+    }
+  ],
+  "questions": [
+    {
+      "chat_id": "c30c8cd0-a16d-4319-b7b3-80c9bb29cecb",
+      "title": "New Chat",
+      "question": "你好",
+      "normalized": "你好",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780558489,
+      "hour": "2026-06-04 07:00"
+    },
+    {
+      "chat_id": "fd32cd98-2239-4f0c-b2cd-447ba4c6ae91",
+      "title": "New Chat",
+      "question": "卡logo了怎么办",
+      "normalized": "卡logo了怎么办",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780560559,
+      "hour": "2026-06-04 08:00"
+    },
+    {
+      "chat_id": "e14e844e-2583-4a27-a445-2998954abd88",
+      "title": "New Chat",
+      "question": "我的电脑突然蓝屏死机了，要怎么修复",
+      "normalized": "我的电脑突然蓝屏死机了，要怎么修复",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780560570,
+      "hour": "2026-06-04 08:00"
+    },
+    {
+      "chat_id": "3c5d29b6-3a6b-4b17-94a8-be1449f66517",
+      "title": "New Chat",
+      "question": "卡logo了怎么办",
+      "normalized": "卡logo了怎么办",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780560821,
+      "hour": "2026-06-04 08:00"
+    },
+    {
+      "chat_id": "62b37d14-2a96-4850-a1d8-74b0abbaf82e",
+      "title": "New Chat",
+      "question": "电脑不开机应该怎么办",
+      "normalized": "电脑不开机应该怎么办",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780565605,
+      "hour": "2026-06-04 09:00"
+    },
+    {
+      "chat_id": "c6d458d5-f74d-4273-afc3-29795d62950a",
+      "title": "New Chat",
+      "question": "卡机了怎么办",
+      "normalized": "卡机了怎么办",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780566974,
+      "hour": "2026-06-04 09:00"
+    },
+    {
+      "chat_id": "052c9715-3d75-4222-95e2-96cd396e89de",
+      "title": "New Chat",
+      "question": "电脑卡了怎么办",
+      "normalized": "电脑卡了怎么办",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780568863,
+      "hour": "2026-06-04 10:00"
+    },
+    {
+      "chat_id": "21a82fae-699c-447d-b358-8944f65e3b1c",
+      "title": "New Chat",
+      "question": "电脑卡了怎么办",
+      "normalized": "电脑卡了怎么办",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780568879,
+      "hour": "2026-06-04 10:00"
+    }
+  ],
+  "recent_questions": [
+    {
+      "chat_id": "c30c8cd0-a16d-4319-b7b3-80c9bb29cecb",
+      "title": "New Chat",
+      "question": "你好",
+      "normalized": "你好",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780558489,
+      "hour": "2026-06-04 07:00"
+    },
+    {
+      "chat_id": "fd32cd98-2239-4f0c-b2cd-447ba4c6ae91",
+      "title": "New Chat",
+      "question": "卡logo了怎么办",
+      "normalized": "卡logo了怎么办",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780560559,
+      "hour": "2026-06-04 08:00"
+    },
+    {
+      "chat_id": "e14e844e-2583-4a27-a445-2998954abd88",
+      "title": "New Chat",
+      "question": "我的电脑突然蓝屏死机了，要怎么修复",
+      "normalized": "我的电脑突然蓝屏死机了，要怎么修复",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780560570,
+      "hour": "2026-06-04 08:00"
+    },
+    {
+      "chat_id": "3c5d29b6-3a6b-4b17-94a8-be1449f66517",
+      "title": "New Chat",
+      "question": "卡logo了怎么办",
+      "normalized": "卡logo了怎么办",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780560821,
+      "hour": "2026-06-04 08:00"
+    },
+    {
+      "chat_id": "62b37d14-2a96-4850-a1d8-74b0abbaf82e",
+      "title": "New Chat",
+      "question": "电脑不开机应该怎么办",
+      "normalized": "电脑不开机应该怎么办",
+      "models": [],
+      "type": "开机/系统故障",
+      "language": "中文",
+      "created_at": 1780565605,
+      "hour": "2026-06-04 09:00"
+    },
+    {
+      "chat_id": "c6d458d5-f74d-4273-afc3-29795d62950a",
+      "title": "New Chat",
+      "question": "卡机了怎么办",
+      "normalized": "卡机了怎么办",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780566974,
+      "hour": "2026-06-04 09:00"
+    },
+    {
+      "chat_id": "052c9715-3d75-4222-95e2-96cd396e89de",
+      "title": "New Chat",
+      "question": "电脑卡了怎么办",
+      "normalized": "电脑卡了怎么办",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780568863,
+      "hour": "2026-06-04 10:00"
+    },
+    {
+      "chat_id": "21a82fae-699c-447d-b358-8944f65e3b1c",
+      "title": "New Chat",
+      "question": "电脑卡了怎么办",
+      "normalized": "电脑卡了怎么办",
+      "models": [],
+      "type": "寒暄/泛问",
+      "language": "中文",
+      "created_at": 1780568879,
+      "hour": "2026-06-04 10:00"
+    }
+  ]
+}

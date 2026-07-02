@@ -1,0 +1,51 @@
+Auto public sync started.
+Interval: 60s
+Main: local-knowledge-base
+Public: local-knowledge-base-public
+Knowledge: 需求文档
+
+[2026-06-04 14:12:57] Checking uploads...
+permission denied while trying to connect to the docker API at unix:///Users/onegoogle/.docker/run/docker.sock
+[2026-06-04 14:12:57] Attach step failed; retrying later.
+Auto public sync started.
+Interval: 60s
+Main: local-knowledge-base
+Public: local-knowledge-base-public
+Knowledge: 需求文档
+
+[2026-06-04 14:13:48] Checking uploads...
+{
+  "knowledge": "需求文档",
+  "added_count": 4,
+  "added_files": [
+    "设备开机卡在 LOGO 画面_无法进入系统排查指南 - 副本.docx",
+    "K17（intel Ultra 5 226V）产品规格书 20260306 (1).pdf",
+    "G3 Pro（intel i3-10110U）产品规格书（MINI PC）20260120 (1).pdf",
+    "双风扇系列设备风扇异响排查 - 副本.docx"
+  ]
+}
+
+Public visitor sync skipped.
+[2026-06-04 14:13:48] Public instance is out of date. Syncing...
+Exporting main instance database snapshot...
+Copying referenced upload files...
+Files linked to 需求文档:
+- 超级手电筒（三光源）手机+App+—+产品需求文档（PRD）.docx
+Importing model, knowledge, and file records into public instance...
+Imported public model: requirement-docs-kb
+Imported knowledge: 需求文档
+Imported files: 1
+
+Restarting public instance...
+ Container local-knowledge-base-public Restarting 
+ Container local-knowledge-base-public Started 
+
+Public requirement model synced.
+Public URLs:
+  http://localhost:3001
+  http://192.168.15.7:3001
+
+NAME                          IMAGE                                COMMAND           SERVICE             CREATED       STATUS                                     PORTS
+local-knowledge-base          ghcr.io/open-webui/open-webui:main   "bash start.sh"   open-webui          5 hours ago   Up 5 hours (healthy)                       0.0.0.0:3000->8080/tcp, [::]:3000->8080/tcp
+local-knowledge-base-public   ghcr.io/open-webui/open-webui:main   "bash start.sh"   open-webui-public   4 hours ago   Up Less than a second (health: starting)   0.0.0.0:3001->8080/tcp, [::]:3001->8080/tcp
+[2026-06-04 14:13:48] Sync complete.

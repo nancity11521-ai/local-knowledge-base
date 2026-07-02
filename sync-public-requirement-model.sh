@@ -19,6 +19,15 @@ TMP_DIR="${SCRIPT_DIR}/.sync-tmp"
 rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}/uploads"
 
+echo "Checkpointing main instance database..."
+"${DOCKER_BIN}" exec -i "${MAIN_CONTAINER}" python - <<'PY'
+import sqlite3
+
+con = sqlite3.connect("/app/backend/data/webui.db")
+con.execute("pragma wal_checkpoint(full)")
+con.close()
+PY
+
 echo "Exporting main instance database snapshot..."
 "${DOCKER_BIN}" cp "${MAIN_CONTAINER}:/app/backend/data/webui.db" "${TMP_DIR}/main-webui.db"
 
@@ -198,7 +207,7 @@ meta["capabilities"] = {
     "image_generation": False,
     "code_interpreter": False,
     "terminal": False,
-    "citations": True,
+    "citations": False,
     "status_updates": True,
     "builtin_tools": False,
 }
