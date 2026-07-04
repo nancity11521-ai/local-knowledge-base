@@ -342,59 +342,6 @@
   function enhancePublicHome() {
     const isHome = location.pathname === '/';
     document.body.classList.toggle('public-home', isHome);
-    if (!isHome) return;
-
-    if (!document.getElementById('public-home-sidebar')) {
-      const sidebar = document.createElement('aside');
-      sidebar.id = 'public-home-sidebar';
-      sidebar.innerHTML = `
-        <img id="public-brand-logo" src="/static/gmktec-logo.png" alt="GMKtec">
-        <a id="public-new-chat" href="/?models=${PUBLIC_MODEL_ID}&model=${PUBLIC_MODEL_ID}&lang=${getLanguage()}">
-          <span aria-hidden="true">＋</span>${UI_TEXT[getLanguage()]?.newChat || '新对话'}
-        </a>
-        <button id="public-current-chat" type="button">
-          <span aria-hidden="true">◯</span>
-          <strong>${UI_TEXT[getLanguage()]?.model || 'GMKtec AI客服'}</strong>
-          <time>刚刚</time>
-        </button>
-        <div id="public-history-label">历史对话</div>
-      `;
-      sidebar.querySelector('#public-current-chat').addEventListener('click', focusQuestionInput);
-      document.body.appendChild(sidebar);
-    }
-
-    const title = document.querySelector('[data-public-hero-title="true"]');
-    const welcome = title?.closest('.m-auto.w-full');
-    if (welcome && !document.getElementById('public-search-label')) {
-      const label = document.createElement('div');
-      label.id = 'public-search-label';
-      label.innerHTML = '<span>✦</span> AI·智搜';
-      const editor = document.getElementById('chat-input');
-      const inputShell = editor?.closest('.bg-white, form, .relative');
-      if (inputShell) inputShell.dataset.publicSearchShell = 'true';
-      inputShell?.prepend(label);
-
-      const shortcuts = document.createElement('div');
-      shortcuts.id = 'public-home-shortcuts';
-      ['问题查询', '设备故障', '教程解答'].forEach((text) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = text;
-        button.addEventListener('click', focusQuestionInput);
-        shortcuts.appendChild(button);
-      });
-      (inputShell || welcome).insertAdjacentElement('afterend', shortcuts);
-    }
-
-    const text = UI_TEXT[getLanguage()] || UI_TEXT['zh-CN'];
-    const fallbackHost = document.querySelector('main') || document.querySelector('[role="main"]') || document.body;
-    const hero = document.getElementById('public-home-hero') || document.createElement('section');
-    hero.id = 'public-home-hero';
-    hero.innerHTML = `
-      <h1>${text.model}</h1>
-      <p>${text.description}</p>
-    `;
-    if (!hero.isConnected) fallbackHost.appendChild(hero);
   }
 
   function hideModelPicker() {
@@ -490,44 +437,21 @@
       if (node.children.length === 0 && (node.textContent || '').trim() === text.model) {
         delete node.dataset.publicHeroTitle;
         delete node.dataset.publicChatTitle;
-        node.style.removeProperty('font-size');
-        node.style.removeProperty('line-height');
-        node.style.removeProperty('font-weight');
 
         const isWelcomeTitle = location.pathname === '/' && node.closest('.m-auto.w-full');
         const isTopBarTitle = node.closest('nav');
         if (isWelcomeTitle) {
           node.dataset.publicHeroTitle = 'true';
-          node.style.setProperty('font-size', '40px', 'important');
-          node.style.setProperty('line-height', '1.2', 'important');
-          node.style.setProperty('font-weight', '400', 'important');
         } else if (isTopBarTitle) {
           const topBar = node.closest('nav');
           if (topBar) {
             topBar.dataset.publicTopBar = 'true';
-            const isHome = location.pathname === '/';
-            topBar.style.setProperty('background', isHome ? '#ffffff' : '#8ec43c', 'important');
-            topBar.style.setProperty('border-bottom', isHome ? '1px solid #e7e7e7' : '1px solid #78aa2f', 'important');
-            topBar.style.setProperty('box-shadow', isHome ? 'none' : '0 3px 12px rgb(74 106 25 / 16%)', 'important');
-            topBar.style.setProperty('height', window.innerWidth <= 640 ? '52px' : '60px', 'important');
-            topBar.style.setProperty('left', '0', 'important');
-            topBar.style.setProperty('padding', window.innerWidth <= 640 ? '0 116px 0 16px' : '0 210px 0 24px', 'important');
-            topBar.style.setProperty('position', 'fixed', 'important');
-            topBar.style.setProperty('right', '0', 'important');
-            topBar.style.setProperty('top', '0', 'important');
-            topBar.style.setProperty('z-index', '9990', 'important');
           }
           node.dataset.publicChatTitle = 'true';
-          node.style.setProperty('color', '#20340f', 'important');
-          node.style.setProperty('font-size', window.innerWidth <= 640 ? '16px' : '18px', 'important');
-          node.style.setProperty('line-height', '1.2', 'important');
-          node.style.setProperty('font-weight', '700', 'important');
         }
       }
       if (node.children.length === 0 && (node.textContent || '').trim() === text.description) {
         node.dataset.publicSubtitle = 'true';
-        node.style.setProperty('font-size', '20px', 'important');
-        node.style.setProperty('line-height', '1.4', 'important');
       }
     });
     enhancePublicHome();
@@ -586,7 +510,6 @@
     setLanguage(getLanguage(), false);
     keepLanguageInUrl();
     patchFetch();
-    patchChatSubmit();
     scheduleRender(true);
     watchDynamicContent();
     let attempts = 0;
