@@ -90,6 +90,14 @@ body[data-public-mode="true"] [data-public-send-button="true"] {
   width: 22px;
 }
 
+#public-suggestions {
+  color: #222;
+  margin: 22px auto 0;
+  max-width: 640px;
+  padding: 0 16px;
+  width: 100%;
+}
+
 .public-suggestions-title {
   color: #5b6472;
   font-size: 14px;
@@ -126,4 +134,3 @@ body[data-public-mode="true"] [data-public-send-button="true"] {
 html[dir="rtl"] .public-suggestion-item {
   text-align: right;
 }
-

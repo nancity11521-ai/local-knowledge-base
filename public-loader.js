@@ -1,6 +1,6 @@
 (function () {
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260704-3';
+  const PUBLIC_STYLE_VERSION = '20260704-5';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
@@ -406,8 +406,25 @@
   function hidePublicChrome() {
     document.body.dataset.publicMode = 'true';
 
-    document.querySelectorAll('#temporary-chat-button').forEach((node) => {
+    document.querySelectorAll('#temporary-chat-button, #input-menu-button, #confirm-recording-button').forEach((node) => {
       node.style.setProperty('display', 'none', 'important');
+    });
+
+    document.querySelectorAll('button').forEach((button) => {
+      const className = String(button.className || '');
+      if (className.includes('bg-indigo') && !button.closest('#public-suggestions')) {
+        button.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    document.querySelectorAll('#sidebar-search-button, #sidebar-notes-button, #pinned-menu-items-list').forEach((node) => {
+      node.style.setProperty('display', 'none', 'important');
+    });
+
+    document.querySelectorAll('#sidebar div').forEach((node) => {
+      if (node.classList.contains('relative') && node.classList.contains('px-2') && node.classList.contains('mt-0.5')) {
+        node.style.setProperty('display', 'none', 'important');
+      }
     });
 
     document.querySelectorAll('button').forEach((button) => {
@@ -415,8 +432,16 @@
       const isControl = label.includes('controls')
         || label.includes('设置')
         || label.includes('settings')
+        || label.includes('search')
+        || label.includes('搜索')
+        || label.includes('notes')
+        || label.includes('笔记')
         || label.includes('user menu')
         || label.includes('用户菜单')
+        || label === 'more'
+        || label === '更多'
+        || textContentOf(button) === '更多'
+        || textContentOf(button) === 'More'
         || label.includes('add model')
         || label.includes('添加模型')
         || label.includes('set as default')
@@ -448,17 +473,46 @@
 
   function localizeSuggestions() {
     const text = UI_TEXT[getLanguage()] || UI_TEXT['zh-CN'];
-    const suggestionBlocks = [...document.querySelectorAll('div')].filter((node) => {
+    const hasNativeSuggestionText = (node) => {
       const value = textContentOf(node);
       return value.includes('Tell me a fun fact')
         || value.includes('Overcome procrastination')
         || value.includes('Give me ideas')
-        || value.startsWith('建议 Tell me')
-        || value.startsWith('Suggestions Tell me');
+        || value.includes('Explain options trading')
+        || value.includes('Help me study')
+        || value.includes('Show me a code snippet')
+        || value.includes('sticky header')
+        || value.includes('college entrance exam')
+        || value.includes('about the Roman Empire')
+        || value.includes('give me tips')
+        || value.includes("kids' art");
+    };
+
+    document.querySelectorAll('div').forEach((node) => {
+      if (node.id === 'public-suggestions' || node.closest('#public-suggestions')) return;
+      if (!hasNativeSuggestionText(node)) return;
+      if (node.querySelector('#chat-input, textarea, input, #chat-input-container')) return;
+      node.style.setProperty('display', 'none', 'important');
+    });
+    document.querySelectorAll('button').forEach((button) => {
+      if (button.closest('#public-suggestions')) return;
+      if (hasNativeSuggestionText(button)) {
+        button.style.setProperty('display', 'none', 'important');
+      }
     });
 
-    suggestionBlocks.forEach((block) => {
-      if (block.dataset.publicSuggestionsLocalized === getLanguage()) return;
+    const anchor = document.getElementById('chat-input-container')
+      || document.getElementById('chat-input')?.closest('form, .relative, .w-full');
+    if (!anchor) return;
+
+    let block = document.getElementById('public-suggestions');
+    if (!block) {
+      block = document.createElement('div');
+      block.id = 'public-suggestions';
+      anchor.insertAdjacentElement('afterend', block);
+    }
+
+    if (block.dataset.publicSuggestionsLocalized !== getLanguage()) {
       block.dataset.publicSuggestionsLocalized = getLanguage();
       block.innerHTML = `
         <div class="public-suggestions-title">${text.suggestionsTitle}</div>
@@ -478,21 +532,21 @@
           editor.focus();
         });
       });
-    });
+    }
   }
 
   function convertVoiceToSend() {
     const editor = document.getElementById('chat-input');
     if (!editor) return;
-    document.querySelectorAll('button').forEach((button) => {
-      const label = `${button.getAttribute('aria-label') || ''} ${button.getAttribute('title') || ''}`.toLowerCase();
+    const buttons = [...document.querySelectorAll('button')].filter((button) => {
       const className = String(button.className || '');
-      const isVoiceMode = label.includes('voice')
-        || label.includes('语音')
-        || label.includes('voz')
-        || label.includes('vocal')
-        || (className.includes('bg-black') && className.includes('text-white'));
-      if (!isVoiceMode) return;
+      return className.includes('bg-black') && className.includes('text-white');
+    });
+    buttons.forEach((button, index) => {
+      if (index < buttons.length - 1) {
+        button.style.setProperty('display', 'none', 'important');
+        return;
+      }
       button.dataset.publicSendButton = 'true';
       button.setAttribute('aria-label', 'Send');
       button.setAttribute('title', 'Send');
@@ -662,10 +716,14 @@
     setLanguage(getLanguage(), false);
     keepLanguageInUrl();
     patchFetch();
+    patchChatSubmit();
+    scheduleRender(true);
+    watchDynamicContent();
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
       keepLanguageInUrl();
+      scheduleRender(true);
       if (attempts >= 8) clearInterval(timer);
     }, 800);
   }
