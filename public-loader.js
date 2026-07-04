@@ -156,34 +156,6 @@
       .trim();
   }
 
-  function applyModelKnowledgeRouting(payload) {
-    const question = questionFromPayload(payload);
-    const modelTokens = [...new Set(
-      (question.match(/\b(?:[A-Z]{1,4}[- ]?)?\d{1,4}(?:\s*(?:PRO|MAX|MINI|PLUS|ULTRA))?\b/gi) || [])
-        .map((value) => value.replace(/\s+/g, '').toUpperCase())
-    )];
-    if (!modelTokens.length) return payload;
-
-    function route(value) {
-      if (!value || typeof value !== 'object') return;
-      for (const key of ['files', 'knowledge']) {
-        if (!Array.isArray(value[key]) || value[key].length < 2) continue;
-        const matches = value[key].filter((item) => {
-          const label = `${item?.name || ''} ${item?.description || ''}`.replace(/\s+/g, '').toUpperCase();
-          return modelTokens.some((token) => label.includes(token));
-        });
-        if (matches.length) {
-          value[key] = matches;
-          value.knowledge_route = { strategy: 'model-first', models: modelTokens };
-        }
-      }
-      Object.values(value).forEach((child) => {
-        if (child && typeof child === 'object') route(child);
-      });
-    }
-    route(payload);
-    return payload;
-  }
 
   function answerInstruction() {
     const lang = activeLanguage();
@@ -252,7 +224,7 @@
         }
         if (isChatRequest && typeof body === 'string') {
           const payload = JSON.parse(body);
-          const nextBody = JSON.stringify(applyLanguageInstruction(applyModelKnowledgeRouting(payload)));
+          const nextBody = JSON.stringify(applyLanguageInstruction(payload));
           if (input instanceof Request && !init?.body) {
             input = new Request(input, { body: nextBody });
           } else {
@@ -510,14 +482,10 @@
     setLanguage(getLanguage(), false);
     keepLanguageInUrl();
     patchFetch();
-    scheduleRender(true);
-    watchDynamicContent();
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
       keepLanguageInUrl();
-      scheduleRender(false);
-      hideModelPicker();
       if (attempts >= 8) clearInterval(timer);
     }, 800);
   }
