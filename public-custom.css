@@ -223,7 +223,8 @@ aside .text-gray-500 {
 /* Hide default prompt suggestions on the public welcome screen. */
 div[role="list"]:has(button[role="listitem"]),
 div:has(> div > div[role="list"] > button[role="listitem"]),
-button[role="listitem"] {
+button[role="listitem"],
+body.public-home .svelte-6tnq1o {
   display: none !important;
 }
 
@@ -420,6 +421,11 @@ body.public-home div:has(> div > h1):has(#chat-input) {
   font-size: 0 !important;
 }
 
+body.public-home [data-public-hero-title="true"],
+body.public-home [data-public-subtitle="true"] {
+  display: none !important;
+}
+
 body.public-home #chat-input {
   align-items: center !important;
   display: flex !important;
@@ -444,14 +450,7 @@ body.public-home #chat-input:focus {
   outline: none !important;
 }
 
-body.public-home [data-public-search-shell="true"] {
-  border: 1px solid #c7e8a5 !important;
-  border-radius: 999px !important;
-  box-shadow: 0 0 0 3px rgb(142 196 60 / 9%) !important;
-  min-height: 76px !important;
-}
-
-body.public-home #chat-input-container,
+/* Position and style the search box container on the public home page */
 body.public-home #message-input-container {
   left: calc(clamp(208px, 16.4vw, 336px) + 50%) !important;
   margin: 0 !important;
@@ -461,28 +460,54 @@ body.public-home #message-input-container {
   transform: translateX(-50%) !important;
   width: min(650px, calc(100vw - clamp(208px, 16.4vw, 336px) - 72px)) !important;
   z-index: 3 !important;
-}
 
-body.public-home #chat-input-container > div,
-body.public-home #message-input-container > div,
-body.public-home form:has(#chat-input) {
+  background: #ffffff !important;
   border: 1px solid #c7e8a5 !important;
   border-radius: 999px !important;
   box-shadow: 0 0 0 3px rgb(142 196 60 / 9%), 0 10px 22px rgb(0 0 0 / 5%) !important;
   min-height: 76px !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
+}
+
+/* Ensure no nested containers duplicate the border, shadow, background, or fixed positioning */
+body.public-home #chat-input-container {
+  position: static !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+body.public-home #message-input-container > div,
+body.public-home #chat-input-container > div,
+body.public-home form:has(#chat-input) {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+body.public-home [data-public-search-shell="true"] {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
 }
 
 body.public-home div:has(> #chat-input):not([data-public-search-shell="true"]) {
-  border-radius: 999px !important;
-}
-
-body.public-home #message-input-container {
   background: transparent !important;
-  border: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
-  padding: 0 !important;
 }
 
 #public-search-label {
