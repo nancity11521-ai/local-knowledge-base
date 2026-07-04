@@ -303,6 +303,44 @@ PY
 rm -rf "${TMP_DIR}"
 
 echo
+echo "Updating Chroma metadata owner to match public guest user ID..."
+"${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" python3 - <<'CHROMA_PY'
+import sys
+sys.path.append("/app/backend")
+import chromadb
+import sqlite3
+
+con = sqlite3.connect("/app/backend/data/webui.db")
+cur = con.cursor()
+public_user_row = cur.execute("select id from user where email = 'admin@localhost' or role = 'admin' limit 1;").fetchone()
+if public_user_row:
+    public_user_id = public_user_row[0]
+    client = chromadb.PersistentClient(path="/app/backend/data/vector_db")
+    for col in client.list_collections():
+        try:
+            results = col.get()
+            metadatas = results.get("metadatas")
+            ids = results.get("ids")
+            if metadatas and ids:
+                new_metadatas = []
+                changed = False
+                for m in metadatas:
+                    if m:
+                        nm = dict(m)
+                        if nm.get("created_by") != public_user_id:
+                            nm["created_by"] = public_user_id
+                            changed = True
+                        new_metadatas.append(nm)
+                    else:
+                        new_metadatas.append(m)
+                if changed:
+                    col.update(ids=ids, metadatas=new_metadatas)
+                    print(f"Updated Chroma collection owner: {col.name}")
+        except Exception as e:
+            print(f"Skipped updating collection {col.name}: {e}")
+CHROMA_PY
+
+echo
 echo "Restarting public instance..."
 "${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml restart open-webui-public
 
