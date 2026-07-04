@@ -1,6 +1,6 @@
 (function () {
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260625-2';
+  const PUBLIC_STYLE_VERSION = '20260704-1';
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
     { code: 'en-US', label: 'English', name: 'English', nativeRule: 'Respond only in English.', dir: 'ltr' },
