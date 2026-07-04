@@ -65,3 +65,15 @@
 #chat-input p.is-editor-empty::before {
   content: var(--public-chat-placeholder) !important;
 }
+
+/* Hide all sidebar elements below 'New Chat' (Search, Notes, Model, History, etc.) */
+#sidebar button.flex-col > div:nth-child(2) > div:not(:first-child) {
+  display: none !important;
+}
+
+/* Hide the user profile/settings menu at the bottom of the sidebar */
+#sidebar > div:has(button[aria-label="用户菜单"]),
+#sidebar > div:has(button[aria-label="User menu"]),
+#sidebar > div:last-child {
+  display: none !important;
+}
