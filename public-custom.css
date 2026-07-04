@@ -66,4 +66,64 @@
   content: var(--public-chat-placeholder) !important;
 }
 
+body[data-public-mode="true"] #temporary-chat-button,
+body[data-public-mode="true"] button[aria-label*="Controls"],
+body[data-public-mode="true"] button[title*="Controls"],
+body[data-public-mode="true"] button[aria-label*="User menu"],
+body[data-public-mode="true"] button[aria-label*="用户菜单"] {
+  display: none !important;
+}
+
+body[data-public-mode="true"] [data-public-send-button="true"] {
+  align-items: center !important;
+  background: #050505 !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  height: 42px !important;
+  justify-content: center !important;
+  width: 42px !important;
+}
+
+.public-send-arrow {
+  height: 22px;
+  width: 22px;
+}
+
+.public-suggestions-title {
+  color: #5b6472;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.public-suggestion-item {
+  background: transparent;
+  border: 0;
+  color: #222;
+  display: block;
+  margin: 0 0 16px;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.public-suggestion-item span {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.public-suggestion-item small {
+  color: #666;
+  display: block;
+  font-size: 15px;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+html[dir="rtl"] .public-suggestion-item {
+  text-align: right;
+}
 

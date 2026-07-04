@@ -1,6 +1,6 @@
 (function () {
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260704-2';
+  const PUBLIC_STYLE_VERSION = '20260704-3';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
@@ -20,7 +20,13 @@
       model: 'GMKtec AI客服',
       description: '问AI·7*24小时 智能服务',
       placeholder: '请输入您的型号和问题',
-      chooseLanguage: '语言'
+      chooseLanguage: '语言',
+      suggestionsTitle: '建议',
+      suggestions: [
+        ['查询产品规格', '请输入型号，例如 G3 Pro 或 K17'],
+        ['排查设备故障', '描述现象，例如卡 Logo、风扇异响'],
+        ['查看教程解答', '输入教程名称或遇到的问题']
+      ]
     },
     'en-US': {
       title: 'Online Q&A',
@@ -28,7 +34,13 @@
       model: 'GMK AI Support',
       description: 'AI-powered search makes finding answers easier.',
       placeholder: 'Enter your question + device model.',
-      chooseLanguage: 'Language'
+      chooseLanguage: 'Language',
+      suggestionsTitle: 'Suggestions',
+      suggestions: [
+        ['Check product specs', 'Enter a model, such as G3 Pro or K17'],
+        ['Troubleshoot a device issue', 'Describe the symptom, such as stuck logo or fan noise'],
+        ['Find tutorial answers', 'Enter a tutorial name or your issue']
+      ]
     },
     'ja-JP': {
       title: 'オンラインQ&A',
@@ -36,7 +48,13 @@
       model: 'GMK AIカスタマーサポート',
       description: 'AIスマート検索で、答えがもっと簡単に見つかります。',
       placeholder: 'ご質問＋デバイスのモデル名を入力してください。',
-      chooseLanguage: '言語'
+      chooseLanguage: '言語',
+      suggestionsTitle: 'おすすめ',
+      suggestions: [
+        ['製品仕様を確認', 'G3 Pro、K17 などのモデル名を入力'],
+        ['故障を確認', 'ロゴ停止、ファン異音などの症状を入力'],
+        ['チュートリアルを検索', 'チュートリアル名または問題を入力']
+      ]
     },
     'ko-KR': {
       title: '온라인 Q&A',
@@ -44,7 +62,13 @@
       model: 'GMK AI 고객 지원',
       description: 'AI 스마트 검색으로 더 쉽게 답을 찾아보세요.',
       placeholder: '질문 + 기기 모델명을 입력하세요.',
-      chooseLanguage: '언어'
+      chooseLanguage: '언어',
+      suggestionsTitle: '추천',
+      suggestions: [
+        ['제품 사양 확인', 'G3 Pro 또는 K17 같은 모델명을 입력하세요'],
+        ['기기 문제 해결', '로고 멈춤, 팬 소음 같은 증상을 입력하세요'],
+        ['튜토리얼 답변 찾기', '튜토리얼 이름이나 문제를 입력하세요']
+      ]
     },
     'es-ES': {
       title: 'Preguntas en línea',
@@ -52,7 +76,13 @@
       model: 'Atención al cliente GMK AI',
       description: 'La búsqueda inteligente con IA facilita encontrar respuestas.',
       placeholder: 'Introduce tu pregunta + modelo del dispositivo.',
-      chooseLanguage: 'Idioma'
+      chooseLanguage: 'Idioma',
+      suggestionsTitle: 'Sugerencias',
+      suggestions: [
+        ['Consultar especificaciones', 'Introduce un modelo, por ejemplo G3 Pro o K17'],
+        ['Resolver fallos del equipo', 'Describe el síntoma, como logo bloqueado o ruido del ventilador'],
+        ['Buscar tutoriales', 'Introduce el nombre del tutorial o tu problema']
+      ]
     },
     'fr-FR': {
       title: 'Questions en ligne',
@@ -60,7 +90,13 @@
       model: 'Service client GMK AI',
       description: 'La recherche intelligente par IA facilite l’obtention de réponses.',
       placeholder: 'Saisissez votre question + le modèle de l’appareil.',
-      chooseLanguage: 'Langue'
+      chooseLanguage: 'Langue',
+      suggestionsTitle: 'Suggestions',
+      suggestions: [
+        ['Consulter les spécifications', 'Saisissez un modèle, par exemple G3 Pro ou K17'],
+        ['Dépanner un appareil', 'Décrivez le symptôme, comme logo bloqué ou bruit de ventilateur'],
+        ['Trouver un tutoriel', 'Saisissez le nom du tutoriel ou votre problème']
+      ]
     },
     'de-DE': {
       title: 'Online-Fragen',
@@ -68,7 +104,13 @@
       model: 'GMK AI-Kundenservice',
       description: 'Mit der intelligenten KI-Suche finden Sie Antworten leichter.',
       placeholder: 'Geben Sie Ihre Frage + das Gerätemodell ein.',
-      chooseLanguage: 'Sprache'
+      chooseLanguage: 'Sprache',
+      suggestionsTitle: 'Vorschläge',
+      suggestions: [
+        ['Produktspezifikationen prüfen', 'Geben Sie ein Modell ein, z. B. G3 Pro oder K17'],
+        ['Gerätefehler beheben', 'Beschreiben Sie das Symptom, z. B. Logo hängt oder Lüftergeräusch'],
+        ['Tutorial-Antworten finden', 'Geben Sie den Tutorial-Namen oder Ihr Problem ein']
+      ]
     },
     'ar-SA': {
       title: 'أسئلة وأجوبة',
@@ -76,7 +118,13 @@
       model: 'خدمة عملاء GMK بالذكاء الاصطناعي',
       description: 'يجعل البحث الذكي بالذكاء الاصطناعي العثور على الإجابات أسهل.',
       placeholder: 'أدخل سؤالك + طراز الجهاز.',
-      chooseLanguage: 'اللغة'
+      chooseLanguage: 'اللغة',
+      suggestionsTitle: 'اقتراحات',
+      suggestions: [
+        ['التحقق من المواصفات', 'أدخل الطراز، مثل G3 Pro أو K17'],
+        ['استكشاف عطل الجهاز', 'صف المشكلة، مثل التوقف عند الشعار أو ضجيج المروحة'],
+        ['البحث في الشروحات', 'أدخل اسم الشرح أو المشكلة']
+      ]
     }
   };
 
@@ -275,6 +323,22 @@
     document.addEventListener('click', (event) => {
       const button = event.target?.closest?.('button');
       if (!button || !document.getElementById('chat-input')) return;
+      if (button.dataset.publicSendButton === 'true') {
+        const editor = document.getElementById('chat-input');
+        if (!(editor?.innerText || '').trim()) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        markEditorQuestion();
+        setTimeout(() => {
+          editor?.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            bubbles: true,
+            cancelable: true
+          }));
+        }, 30);
+        return;
+      }
       const editorContainer = document.getElementById('chat-input')?.closest('form, .relative, .w-full');
       if (!editorContainer?.contains(button) || button.dataset.publicLanguageResubmit === 'true') return;
       const editor = document.getElementById('chat-input');
@@ -288,6 +352,16 @@
         delete button.dataset.publicLanguageResubmit;
       }, 30);
     }, true);
+  }
+
+  function enableTemporaryChat() {
+    const button = document.getElementById('temporary-chat-button');
+    if (!button || button.dataset.publicTemporaryTouched === 'true') return;
+    const active = button.getAttribute('aria-pressed') === 'true'
+      || button.getAttribute('data-state') === 'on'
+      || /active|enabled|selected|bg-black|text-white/.test(button.className || '');
+    button.dataset.publicTemporaryTouched = 'true';
+    if (!active) button.click();
   }
 
   function makeSwitcher() {
@@ -325,6 +399,107 @@
     });
   }
 
+  function textContentOf(node) {
+    return (node?.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function hidePublicChrome() {
+    document.body.dataset.publicMode = 'true';
+
+    document.querySelectorAll('#temporary-chat-button').forEach((node) => {
+      node.style.setProperty('display', 'none', 'important');
+    });
+
+    document.querySelectorAll('button').forEach((button) => {
+      const label = `${button.getAttribute('aria-label') || ''} ${button.getAttribute('title') || ''} ${textContentOf(button)}`.toLowerCase();
+      const isControl = label.includes('controls')
+        || label.includes('设置')
+        || label.includes('settings')
+        || label.includes('user menu')
+        || label.includes('用户菜单')
+        || label.includes('add model')
+        || label.includes('添加模型')
+        || label.includes('set as default')
+        || label.includes('设为默认');
+      if (isControl) button.style.setProperty('display', 'none', 'important');
+    });
+
+    document.querySelectorAll('button img, [role=\"button\"] img').forEach((img) => {
+      const button = img.closest('button, [role=\"button\"]');
+      const label = `${button?.getAttribute('aria-label') || ''} ${button?.getAttribute('title') || ''} ${textContentOf(button)}`.toLowerCase();
+      if (label.includes('user') || label.includes('profile') || img.alt?.toLowerCase().includes('user')) {
+        button?.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    document.querySelectorAll('button').forEach((button) => {
+      if (textContentOf(button) === '设为默认' || textContentOf(button) === 'Set as default') {
+        button.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    document.querySelectorAll('#sidebar h2, #sidebar h3, #sidebar nav, #sidebar a, #sidebar button, #sidebar div').forEach((node) => {
+      const text = textContentOf(node);
+      const shouldHide = /搜索|笔记|模型|分组|对话|今天|过去|Search|Notes|Models|Groups|Chats|Today|User/.test(text)
+        && !/新对话|New chat/.test(text);
+      if (shouldHide) node.style.setProperty('display', 'none', 'important');
+    });
+  }
+
+  function localizeSuggestions() {
+    const text = UI_TEXT[getLanguage()] || UI_TEXT['zh-CN'];
+    const suggestionBlocks = [...document.querySelectorAll('div')].filter((node) => {
+      const value = textContentOf(node);
+      return value.includes('Tell me a fun fact')
+        || value.includes('Overcome procrastination')
+        || value.includes('Give me ideas')
+        || value.startsWith('建议 Tell me')
+        || value.startsWith('Suggestions Tell me');
+    });
+
+    suggestionBlocks.forEach((block) => {
+      if (block.dataset.publicSuggestionsLocalized === getLanguage()) return;
+      block.dataset.publicSuggestionsLocalized = getLanguage();
+      block.innerHTML = `
+        <div class="public-suggestions-title">${text.suggestionsTitle}</div>
+        ${text.suggestions.map(([title, desc]) => `
+          <button type="button" class="public-suggestion-item" data-public-suggestion="${title} ${desc}">
+            <span>${title}</span>
+            <small>${desc}</small>
+          </button>
+        `).join('')}
+      `;
+      block.querySelectorAll('.public-suggestion-item').forEach((item) => {
+        item.addEventListener('click', () => {
+          const editor = document.getElementById('chat-input');
+          if (!editor) return;
+          editor.textContent = item.dataset.publicSuggestion || '';
+          editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: editor.textContent }));
+          editor.focus();
+        });
+      });
+    });
+  }
+
+  function convertVoiceToSend() {
+    const editor = document.getElementById('chat-input');
+    if (!editor) return;
+    document.querySelectorAll('button').forEach((button) => {
+      const label = `${button.getAttribute('aria-label') || ''} ${button.getAttribute('title') || ''}`.toLowerCase();
+      const className = String(button.className || '');
+      const isVoiceMode = label.includes('voice')
+        || label.includes('语音')
+        || label.includes('voz')
+        || label.includes('vocal')
+        || (className.includes('bg-black') && className.includes('text-white'));
+      if (!isVoiceMode) return;
+      button.dataset.publicSendButton = 'true';
+      button.setAttribute('aria-label', 'Send');
+      button.setAttribute('title', 'Send');
+      button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="public-send-arrow"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    });
+  }
+
   function replaceTextInSmallNodes(from, to) {
     document.querySelectorAll('button, a, label, span, div, h1, h2, h3').forEach((node) => {
       if (node.children.length > 2) return;
@@ -356,6 +531,7 @@
     document.documentElement.lang = lang.code;
     document.documentElement.dir = lang.dir;
     document.body.dataset.publicLanguage = lang.code;
+    document.body.dataset.publicMode = 'true';
     document.body.dataset.publicTitle = text.title;
     document.body.dataset.publicModel = text.model;
     document.documentElement.style.setProperty('--public-chat-placeholder', JSON.stringify(text.placeholder));
@@ -374,7 +550,8 @@
         placeholder.setAttribute('data-placeholder', text.placeholder);
       }
     });
-    document.querySelectorAll('button').forEach((button) => {
+    convertVoiceToSend();
+    document.querySelectorAll('button:not([data-public-send-button=\"true\"])').forEach((button) => {
       const label = `${button.getAttribute('aria-label') || ''} ${button.getAttribute('title') || ''}`.toLowerCase();
       const isVoiceControl = label.includes('voice')
         || label.includes('语音')
@@ -405,6 +582,9 @@
       ['For public visitors: answers are based only on the requirements knowledge base', text.description]
     ];
     replacements.forEach(([from, to]) => replaceTextInSmallNodes(from, to));
+    hidePublicChrome();
+    localizeSuggestions();
+    enableTemporaryChat();
     document.querySelectorAll('div, p, span').forEach((node) => {
       if (node.children.length === 0 && (node.textContent || '').trim() === text.model) {
         delete node.dataset.publicHeroTitle;
