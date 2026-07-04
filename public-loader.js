@@ -1,6 +1,7 @@
 (function () {
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260704-1';
+  const PUBLIC_STYLE_VERSION = '20260704-2';
+  const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
     { code: 'en-US', label: 'English', name: 'English', nativeRule: 'Respond only in English.', dir: 'ltr' },
@@ -231,6 +232,8 @@
     }
     payload.language = getLanguage();
     payload.public_response_language = getLanguage();
+    payload.model = PUBLIC_MODEL_ID;
+    if (Array.isArray(payload.models)) payload.models = [PUBLIC_MODEL_ID];
     return payload;
   }
 
@@ -346,7 +349,7 @@
       sidebar.id = 'public-home-sidebar';
       sidebar.innerHTML = `
         <img id="public-brand-logo" src="/static/gmktec-logo.png" alt="GMKtec">
-        <a id="public-new-chat" href="/?models=requirement-docs-kb&lang=${getLanguage()}">
+        <a id="public-new-chat" href="/?models=${PUBLIC_MODEL_ID}&model=${PUBLIC_MODEL_ID}&lang=${getLanguage()}">
           <span aria-hidden="true">＋</span>${UI_TEXT[getLanguage()]?.newChat || '新对话'}
         </a>
         <button id="public-current-chat" type="button">
@@ -382,6 +385,25 @@
       });
       (inputShell || welcome).insertAdjacentElement('afterend', shortcuts);
     }
+
+    const text = UI_TEXT[getLanguage()] || UI_TEXT['zh-CN'];
+    const fallbackHost = document.querySelector('main') || document.querySelector('[role="main"]') || document.body;
+    const hero = document.getElementById('public-home-hero') || document.createElement('section');
+    hero.id = 'public-home-hero';
+    hero.innerHTML = `
+      <h1>${text.model}</h1>
+      <p>${text.description}</p>
+    `;
+    if (!hero.isConnected) fallbackHost.appendChild(hero);
+  }
+
+  function hideModelPicker() {
+    document.querySelectorAll('div, section, aside').forEach((node) => {
+      const value = (node.textContent || '').trim();
+      const isModelPicker = value.includes(PUBLIC_MODEL_ID)
+        && (value.includes('暂无可用模型') || value.includes('No available models') || value.includes('管理连接'));
+      if (isModelPicker) node.style.setProperty('display', 'none', 'important');
+    });
   }
 
   function replaceTextInSmallNodes(from, to) {
@@ -515,6 +537,7 @@
     requestAnimationFrame(() => {
       makeSwitcher();
       applyVisibleLanguage();
+      hideModelPicker();
     });
   }
 
@@ -527,6 +550,7 @@
       requestAnimationFrame(() => {
         renderQueued = false;
         applyVisibleLanguage();
+        hideModelPicker();
       });
     });
     window.__publicLanguageObserver.observe(document.body, {
@@ -539,8 +563,20 @@
 
   function keepLanguageInUrl() {
     const url = new URL(location.href);
-    if (url.searchParams.get('lang') === getLanguage()) return;
-    url.searchParams.set('lang', getLanguage());
+    let changed = false;
+    if (url.searchParams.get('lang') !== getLanguage()) {
+      url.searchParams.set('lang', getLanguage());
+      changed = true;
+    }
+    if (url.searchParams.get('models') !== PUBLIC_MODEL_ID) {
+      url.searchParams.set('models', PUBLIC_MODEL_ID);
+      changed = true;
+    }
+    if (url.searchParams.get('model') !== PUBLIC_MODEL_ID) {
+      url.searchParams.set('model', PUBLIC_MODEL_ID);
+      changed = true;
+    }
+    if (!changed) return;
     history.replaceState(history.state, '', url.toString());
   }
 
@@ -558,6 +594,7 @@
       attempts += 1;
       keepLanguageInUrl();
       scheduleRender(false);
+      hideModelPicker();
       if (attempts >= 8) clearInterval(timer);
     }, 800);
   }

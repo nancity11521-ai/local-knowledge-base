@@ -42,24 +42,34 @@ model_id = "requirement-docs-kb"
 model = cur.execute("select * from model where id = ?", (model_id,)).fetchone()
 if not model:
     raise SystemExit(f"Model not found: {model_id}")
-knowledge_id = cur.execute(
-    "select knowledge_id from knowledge_file limit 1"
+knowledge = cur.execute(
+    """
+    select k.id, k.name, count(kf.file_id) as file_count
+    from knowledge k
+    join knowledge_file kf on kf.knowledge_id = k.id
+    group by k.id, k.name
+    order by file_count desc, k.updated_at desc
+    limit 1
+    """
 ).fetchone()
+if not knowledge:
+    raise SystemExit("No knowledge with linked files was found")
 rows = cur.execute(
     """
     select f.id, f.filename, f.path
     from file f
     join knowledge_file kf on kf.file_id = f.id
-    join knowledge k on k.id = kf.knowledge_id
-    where k.name = '需求文档'
+    where kf.knowledge_id = ?
     """
+    ,
+    (knowledge["id"],),
 ).fetchall()
 if not rows:
-    raise SystemExit("No files found for knowledge: 需求文档")
+    raise SystemExit(f"No files found for knowledge: {knowledge['name']}")
 with open(out, "w", encoding="utf-8") as f:
     for row in rows:
         f.write(row["path"] + "\n")
-print("Files linked to 需求文档:")
+print(f"Files linked to {knowledge['name']}:")
 for row in rows:
     print("-", row["filename"])
 PY
@@ -103,9 +113,18 @@ model = src_cur.execute("select * from model where id = ?", ("requirement-docs-k
 if not model:
     raise SystemExit("Source model requirement-docs-kb not found")
 
-knowledge = src_cur.execute("select * from knowledge where name = ?", ("需求文档",)).fetchone()
+knowledge = src_cur.execute(
+    """
+    select k.*
+    from knowledge k
+    join knowledge_file kf on kf.knowledge_id = k.id
+    group by k.id
+    order by count(kf.file_id) desc, k.updated_at desc
+    limit 1
+    """
+).fetchone()
 if not knowledge:
-    raise SystemExit("Source knowledge 需求文档 not found")
+    raise SystemExit("Source knowledge with linked files not found")
 
 knowledge_id = knowledge["id"]
 

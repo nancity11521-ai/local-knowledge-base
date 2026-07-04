@@ -38,6 +38,9 @@ services:
       - ./assets/gmktec-logo.png:/app/backend/open_webui/static/gmktec-logo.png:ro
       - ./public-custom.css:/app/backend/open_webui/static/custom.css:ro
       - ./public-loader.js:/app/backend/open_webui/static/loader.js:ro
+      - ./assets/gmktec-logo.png:/app/build/static/gmktec-logo.png:ro
+      - ./public-custom.css:/app/build/static/custom.css:ro
+      - ./public-loader.js:/app/build/static/loader.js:ro
 
 volumes:
   open-webui-public-data:

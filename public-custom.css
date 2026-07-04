@@ -387,6 +387,39 @@ body.public-home .m-auto.w-full {
   transform: translate(50px, 0);
 }
 
+body.public-home #public-home-hero {
+  left: calc(clamp(208px, 16.4vw, 336px) + 50%);
+  max-width: 650px;
+  pointer-events: none;
+  position: fixed;
+  text-align: center;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  width: min(650px, calc(100vw - clamp(208px, 16.4vw, 336px) - 72px));
+  z-index: 2;
+}
+
+body.public-home #public-home-hero h1 {
+  color: #080808;
+  font-size: 46px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0;
+}
+
+body.public-home #public-home-hero p {
+  color: #222;
+  font-size: 18px;
+  line-height: 1.4;
+  margin: 12px 0 0;
+}
+
+body.public-home div:has(> div > img[src*="logo"]):has(h1),
+body.public-home div:has(> h1):has(#chat-input),
+body.public-home div:has(> div > h1):has(#chat-input) {
+  font-size: 0 !important;
+}
+
 body.public-home #chat-input {
   align-items: center !important;
   display: flex !important;
@@ -418,6 +451,32 @@ body.public-home [data-public-search-shell="true"] {
   min-height: 76px !important;
 }
 
+body.public-home #chat-input-container,
+body.public-home #message-input-container {
+  left: calc(clamp(208px, 16.4vw, 336px) + 50%) !important;
+  margin: 0 !important;
+  max-width: 650px !important;
+  position: fixed !important;
+  top: calc(38% + 118px) !important;
+  transform: translateX(-50%) !important;
+  width: min(650px, calc(100vw - clamp(208px, 16.4vw, 336px) - 72px)) !important;
+  z-index: 3 !important;
+}
+
+body.public-home #chat-input-container > div,
+body.public-home #message-input-container > div,
+body.public-home form:has(#chat-input) {
+  border: 1px solid #c7e8a5 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 0 0 3px rgb(142 196 60 / 9%), 0 10px 22px rgb(0 0 0 / 5%) !important;
+  min-height: 76px !important;
+  overflow: hidden !important;
+}
+
+body.public-home div:has(> #chat-input):not([data-public-search-shell="true"]) {
+  border-radius: 999px !important;
+}
+
 body.public-home #message-input-container {
   background: transparent !important;
   border: 0 !important;
@@ -441,6 +500,38 @@ body.public-home #message-input-container {
   top: 50%;
   transform: translateY(-50%);
   z-index: 3;
+}
+
+body.public-home #message-input-container:not(:has(#public-search-label))::before,
+body.public-home #chat-input-container:not(:has(#public-search-label))::before {
+  align-items: center;
+  border-right: 1px solid #dedede;
+  color: #1f2937;
+  content: "✦ AI·智搜";
+  display: flex;
+  font-size: 20px;
+  height: 34px;
+  left: 34px;
+  line-height: 1;
+  padding-right: 26px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+}
+
+body.public-home #message-input-container:not(:has(#public-search-label))::after,
+body.public-home #chat-input-container:not(:has(#public-search-label))::after {
+  color: #8ec43c;
+  content: "✦";
+  font-size: 20px;
+  left: 34px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
 }
 
 #public-search-label span {
