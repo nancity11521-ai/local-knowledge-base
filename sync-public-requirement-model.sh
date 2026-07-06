@@ -14,7 +14,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
 MAIN_CONTAINER="${MAIN_CONTAINER:-local-knowledge-base}"
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 MODEL_ID="requirement-docs-kb"
-KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-需求文档}"
+KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 
 TMP_DIR="${SCRIPT_DIR}/.sync-tmp"
 rm -rf "${TMP_DIR}"
@@ -263,24 +263,21 @@ params = json.loads(model["params"] or "{}")
 params["temperature"] = 0
 
 model_meta = json.loads(model["meta"] or "{}")
-model_meta["description"] = "公开访客专用：只根据需求文档知识库回答"
-existing_knowledge = model_meta.get("knowledge", [])
-existing_collection_ids = {
-    item.get("id")
-    for item in existing_knowledge
-    if isinstance(item, dict) and item.get("type") == "collection"
-}
+model_meta["description"] = "公开访客专用：只根据当前绑定知识库回答"
+
+# Rebuild knowledge bindings from the freshly imported public records. Keeping
+# old model metadata can leave the public site attached to stale collections.
+rebuilt_knowledge = []
 for col_id in collection_ids:
-    if col_id not in existing_collection_ids:
-        row = dst_cur.execute("select id, name, description from knowledge where id = ?", (col_id,)).fetchone()
-        if row:
-            existing_knowledge.append({
-                "id": row["id"],
-                "name": row["name"],
-                "description": row["description"],
-                "type": "collection",
-            })
-model_meta["knowledge"] = existing_knowledge
+    row = dst_cur.execute("select id, name, description from knowledge where id = ?", (col_id,)).fetchone()
+    if row:
+        rebuilt_knowledge.append({
+            "id": row["id"],
+            "name": row["name"],
+            "description": row["description"],
+            "type": "collection",
+        })
+model_meta["knowledge"] = rebuilt_knowledge
 model_meta["capabilities"] = {
     "file_context": True,
     "vision": False,

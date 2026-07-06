@@ -154,7 +154,10 @@ def enforce_response_language(raw):
         "role": "system",
         "content": (
             f"PUBLIC_LANGUAGE_ENFORCEMENT:{language}\n{rule}\n"
-            "Follow this language requirement even if the user's question or retrieved knowledge-base text uses another language."
+            "Follow this language requirement even if the user's question or retrieved knowledge-base text uses another language.\n"
+            "Answer only from retrieved knowledge-base context. Do not use general model knowledge, assumptions, internet knowledge, "
+            "or invented product specifications. If the retrieved context does not explicitly contain the requested answer, say that "
+            "no relevant information was found in the knowledge base."
         ),
     })
     for message in reversed(messages):
@@ -162,7 +165,8 @@ def enforce_response_language(raw):
             message["content"] = (
                 f"{message['content'].rstrip()}\n\n"
                 f"Mandatory output requirement: {rule} "
-                "Translate any relevant source information into the required response language before answering."
+                "Translate any relevant source information into the required response language before answering. "
+                "Use only retrieved knowledge-base context and never invent missing product parameters."
             )
             break
     payload["messages"] = messages
