@@ -14,6 +14,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
 MAIN_CONTAINER="${MAIN_CONTAINER:-local-knowledge-base}"
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 MODEL_ID="requirement-docs-kb"
+KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-需求文档}"
 
 TMP_DIR="${SCRIPT_DIR}/.sync-tmp"
 rm -rf "${TMP_DIR}"
@@ -31,12 +32,12 @@ echo "Exporting main instance database snapshot..."
 "${DOCKER_BIN}" cp "${MAIN_CONTAINER}:/app/backend/data/webui.db" "${TMP_DIR}/main-webui.db"
 
 echo "Analyzing model links and upload files..."
-python3 - "${TMP_DIR}/main-webui.db" "${TMP_DIR}/uploads-list.txt" "${MODEL_ID}" <<'PY'
+python3 - "${TMP_DIR}/main-webui.db" "${TMP_DIR}/uploads-list.txt" "${MODEL_ID}" "${KNOWLEDGE_NAME}" <<'PY'
 import sqlite3
 import sys
 import json
 
-db, out, model_id = sys.argv[1:4]
+db, out, model_id, knowledge_name = sys.argv[1:5]
 con = sqlite3.connect(db)
 con.row_factory = sqlite3.Row
 cur = con.cursor()
@@ -57,6 +58,12 @@ for item in knowledge_list:
             collection_ids.append(item.get("id"))
         elif item.get("type") == "file":
             file_ids.append(item.get("id"))
+
+# Fallback: if the model does not carry a knowledge binding, sync the named
+# public collection so the visitor model never becomes an empty shell.
+named_knowledge = cur.execute("select id from knowledge where name = ?", (knowledge_name,)).fetchone()
+if named_knowledge and named_knowledge["id"] not in collection_ids:
+    collection_ids.append(named_knowledge["id"])
 
 # Also query knowledge_file to get files linked to these collections
 for col_id in collection_ids:
@@ -104,14 +111,14 @@ echo "Syncing vector database (embeddings)..."
 "${DOCKER_BIN}" exec -i "${MAIN_CONTAINER}" tar -cf - -C /app/backend/data vector_db | "${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" tar -xf - -C /app/backend/data
 
 echo "Importing model, knowledge, and file records into public instance..."
-"${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" python - "${MODEL_ID}" <<'PY'
+"${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" python - "${MODEL_ID}" "${KNOWLEDGE_NAME}" <<'PY'
 import json
 import sqlite3
 import sys
 import time
 import uuid
 
-model_id = sys.argv[1]
+model_id, knowledge_name = sys.argv[1:3]
 
 src = sqlite3.connect("/tmp/main-webui.db")
 src.row_factory = sqlite3.Row
@@ -146,6 +153,10 @@ for item in knowledge_list:
             collection_ids.append(item.get("id"))
         elif item.get("type") == "file":
             file_ids.append(item.get("id"))
+
+named_knowledge = src_cur.execute("select id, name from knowledge where name = ?", (knowledge_name,)).fetchone()
+if named_knowledge and named_knowledge["id"] not in collection_ids:
+    collection_ids.append(named_knowledge["id"])
 
 # Fetch files linked to collections
 for col_id in collection_ids:
@@ -253,6 +264,23 @@ params["temperature"] = 0
 
 model_meta = json.loads(model["meta"] or "{}")
 model_meta["description"] = "公开访客专用：只根据需求文档知识库回答"
+existing_knowledge = model_meta.get("knowledge", [])
+existing_collection_ids = {
+    item.get("id")
+    for item in existing_knowledge
+    if isinstance(item, dict) and item.get("type") == "collection"
+}
+for col_id in collection_ids:
+    if col_id not in existing_collection_ids:
+        row = dst_cur.execute("select id, name, description from knowledge where id = ?", (col_id,)).fetchone()
+        if row:
+            existing_knowledge.append({
+                "id": row["id"],
+                "name": row["name"],
+                "description": row["description"],
+                "type": "collection",
+            })
+model_meta["knowledge"] = existing_knowledge
 model_meta["capabilities"] = {
     "file_context": True,
     "vision": False,

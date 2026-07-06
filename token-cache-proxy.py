@@ -128,7 +128,7 @@ def enforce_response_language(raw):
     if not isinstance(messages, list):
         return raw
 
-    language = None
+    language = payload.get("public_response_language") or payload.get("language")
     for message in messages:
         content = message.get("content") if isinstance(message, dict) else None
         if not isinstance(content, str):
