@@ -1,8 +1,9 @@
 (function () {
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260706-4';
-  const PUBLIC_KB_VERSION = '20260706-rag-sync-3';
+  const PUBLIC_STYLE_VERSION = '20260706-5';
+  const PUBLIC_KB_VERSION = '20260706-rag-sync-4';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
+  window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
     { code: 'en-US', label: 'English', name: 'English', nativeRule: 'Respond only in English.', dir: 'ltr' },
@@ -232,6 +233,11 @@
     function visit(value) {
       if (!value || typeof value !== 'object') return;
       updateMessages(value, 'messages');
+      if (Object.prototype.hasOwnProperty.call(value, 'model')) value.model = PUBLIC_MODEL_ID;
+      if (Array.isArray(value.models)) value.models = [PUBLIC_MODEL_ID];
+      ['model_id', 'modelId', 'selectedModel', 'selected_model_id'].forEach((key) => {
+        if (typeof value[key] === 'string') value[key] = PUBLIC_MODEL_ID;
+      });
       Object.values(value).forEach((child) => {
         if (child && typeof child === 'object') visit(child);
       });
@@ -246,6 +252,12 @@
     payload.public_kb_version = PUBLIC_KB_VERSION;
     payload.model = PUBLIC_MODEL_ID;
     if (Array.isArray(payload.models)) payload.models = [PUBLIC_MODEL_ID];
+    payload.metadata = {
+      ...(payload.metadata || {}),
+      model: PUBLIC_MODEL_ID,
+      selected_model_id: PUBLIC_MODEL_ID,
+      public_kb_version: PUBLIC_KB_VERSION
+    };
     return payload;
   }
 
@@ -374,6 +386,7 @@
 
   function hidePublicChrome() {
     document.body.dataset.publicMode = 'true';
+    document.body.dataset.publicLoaderVersion = PUBLIC_STYLE_VERSION;
 
     document.querySelectorAll('#temporary-chat-button, #input-menu-button, #confirm-recording-button, #sidebar-search-button, #sidebar-notes-button, #pinned-menu-items-list').forEach((node) => {
       node.style.setProperty('display', 'none', 'important');
@@ -383,6 +396,14 @@
       const className = String(button.className || '');
       if (className.includes('bg-indigo') && !button.closest('#public-suggestions')) {
         button.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    document.querySelectorAll('[aria-label], [title]').forEach((node) => {
+      const label = `${node.getAttribute('aria-label') || ''} ${node.getAttribute('title') || ''}`.toLowerCase();
+      if (/controls|settings|user menu|add model|temporary chat|voice mode/.test(label)
+        || /设置|用户菜单|添加模型|临时|语音/.test(label)) {
+        if (node.dataset.publicSendButton !== 'true') node.style.setProperty('display', 'none', 'important');
       }
     });
 
@@ -659,6 +680,7 @@
   }
 
   function init() {
+    document.documentElement.dataset.publicLoaderVersion = PUBLIC_STYLE_VERSION;
     loadCurrentStyles();
     logVisit();
     setLanguage(getLanguage(), false);

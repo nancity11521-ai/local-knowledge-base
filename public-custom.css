@@ -82,7 +82,15 @@ body[data-public-mode="true"] button[aria-label*="添加模型"],
 body[data-public-mode="true"] button[aria-label*="Voice mode"],
 body[data-public-mode="true"] button[title*="Voice mode"],
 body[data-public-mode="true"] button[aria-label*="语音模式"],
-body[data-public-mode="true"] button[title*="语音模式"] {
+body[data-public-mode="true"] button[title*="语音模式"],
+body[data-public-mode="true"] button[aria-label*="Temporary"],
+body[data-public-mode="true"] button[title*="Temporary"],
+body[data-public-mode="true"] button[aria-label*="临时"],
+body[data-public-mode="true"] button[title*="临时"],
+body[data-public-mode="true"] button[aria-label*="Settings"],
+body[data-public-mode="true"] button[title*="Settings"],
+body[data-public-mode="true"] button[aria-label*="设置"],
+body[data-public-mode="true"] button[title*="设置"] {
   display: none !important;
 }
 
@@ -125,6 +133,27 @@ body[data-public-mode="true"] #sidebar a:not([href="/"]):not([href^="/?"]) {
 body[data-public-mode="true"] aside div:has(> span > button[aria-label*="User"]),
 body[data-public-mode="true"] #sidebar div:has(> span > button[aria-label*="User"]) {
   display: none !important;
+}
+
+body[data-public-mode="true"] aside [class*="chat"],
+body[data-public-mode="true"] #sidebar [class*="chat"],
+body[data-public-mode="true"] aside [class*="history"],
+body[data-public-mode="true"] #sidebar [class*="history"] {
+  display: none !important;
+}
+
+body[data-public-mode="true"] aside [data-testid*="user"],
+body[data-public-mode="true"] #sidebar [data-testid*="user"],
+body[data-public-mode="true"] aside [aria-label*="User"],
+body[data-public-mode="true"] #sidebar [aria-label*="User"],
+body[data-public-mode="true"] aside [aria-label*="用户"],
+body[data-public-mode="true"] #sidebar [aria-label*="用户"] {
+  display: none !important;
+}
+
+body[data-public-mode="true"] div[role="dialog"]:has(button),
+body[data-public-mode="true"] div[popover]:has(button) {
+  max-width: min(92vw, 680px);
 }
 
 body[data-public-mode="true"] button {

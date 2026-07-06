@@ -279,11 +279,25 @@ params["temperature"] = 0
 model_meta = json.loads(model["meta"] or "{}")
 model_meta["description"] = "公开访客专用：只根据当前绑定知识库回答"
 
-# Rebuild knowledge bindings from the freshly imported public records. The
-# public model intentionally uses direct file bindings instead of collection
-# bindings so stale collection-level vectors cannot leak into visitor answers.
+# Rebuild knowledge bindings from the freshly imported public records. Keep
+# collection bindings when the admin model uses them so public retrieval follows
+# the same path as the admin backend.
 rebuilt_knowledge = []
-for fid in file_ids:
+for col_id in collection_ids:
+    row = dst_cur.execute("select * from knowledge where id = ?", (col_id,)).fetchone()
+    if not row:
+        continue
+    rebuilt_knowledge.append({
+        "type": "collection",
+        "id": row["id"],
+        "name": row["name"],
+        "description": row["description"] or "",
+        "status": True,
+        "itemId": str(uuid.uuid4()),
+    })
+
+direct_file_ids = explicit_file_ids if collection_ids else file_ids
+for fid in direct_file_ids:
     row = dst_cur.execute("select * from file where id = ?", (fid,)).fetchone()
     if not row:
         continue
@@ -409,6 +423,7 @@ CHROMA_PY
 echo
 echo "Restarting public instance..."
 "${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml restart open-webui-public
+"${SCRIPT_DIR}/inject-public-assets.sh"
 
 echo
 echo "Public requirement model synced."

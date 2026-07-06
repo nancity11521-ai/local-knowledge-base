@@ -40,6 +40,8 @@ PUBLIC_WEBUI_PORT_VALUE="${PUBLIC_WEBUI_PORT_VALUE:-3001}"
 
 "${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d
 
+"${SCRIPT_DIR}/inject-public-assets.sh"
+
 "${SCRIPT_DIR}/cleanup-public-chats.sh" || true
 
 echo
