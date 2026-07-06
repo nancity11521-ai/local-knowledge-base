@@ -51,21 +51,27 @@ knowledge_list = meta.get("knowledge", [])
 
 collection_ids = []
 file_ids = []
+explicit_collection_ids = []
+explicit_file_ids = []
 
 for item in knowledge_list:
     if isinstance(item, dict):
         if item.get("type") == "collection":
-            collection_ids.append(item.get("id"))
+            explicit_collection_ids.append(item.get("id"))
         elif item.get("type") == "file":
-            file_ids.append(item.get("id"))
+            explicit_file_ids.append(item.get("id"))
 
-# Fallback: if the model does not carry a knowledge binding, sync the named
-# public collection so the visitor model never becomes an empty shell.
-named_knowledge = cur.execute("select id from knowledge where name = ?", (knowledge_name,)).fetchone()
-if named_knowledge and named_knowledge["id"] not in collection_ids:
-    collection_ids.append(named_knowledge["id"])
+collection_ids = [item for item in explicit_collection_ids if item]
+file_ids = [item for item in explicit_file_ids if item]
 
-# Also query knowledge_file to get files linked to these collections
+# Fallback only when the model has no explicit knowledge binding. This avoids
+# leaking stale default collections while keeping an empty model usable.
+if not collection_ids and not file_ids:
+    named_knowledge = cur.execute("select id from knowledge where name = ?", (knowledge_name,)).fetchone()
+    if named_knowledge:
+        collection_ids.append(named_knowledge["id"])
+
+# Include files from explicitly bound collections plus any direct file bindings.
 for col_id in collection_ids:
     k_files = cur.execute("select file_id from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
     for kf in k_files:
@@ -146,19 +152,25 @@ knowledge_list = meta.get("knowledge", [])
 
 collection_ids = []
 file_ids = []
+explicit_collection_ids = []
+explicit_file_ids = []
 
 for item in knowledge_list:
     if isinstance(item, dict):
         if item.get("type") == "collection":
-            collection_ids.append(item.get("id"))
+            explicit_collection_ids.append(item.get("id"))
         elif item.get("type") == "file":
-            file_ids.append(item.get("id"))
+            explicit_file_ids.append(item.get("id"))
 
-named_knowledge = src_cur.execute("select id, name from knowledge where name = ?", (knowledge_name,)).fetchone()
-if named_knowledge and named_knowledge["id"] not in collection_ids:
-    collection_ids.append(named_knowledge["id"])
+collection_ids = [item for item in explicit_collection_ids if item]
+file_ids = [item for item in explicit_file_ids if item]
 
-# Fetch files linked to collections
+if not collection_ids and not file_ids:
+    named_knowledge = src_cur.execute("select id, name from knowledge where name = ?", (knowledge_name,)).fetchone()
+    if named_knowledge:
+        collection_ids.append(named_knowledge["id"])
+
+# Include files from explicitly bound collections plus any direct file bindings.
 for col_id in collection_ids:
     k_files = src_cur.execute("select file_id from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
     for kf in k_files:
@@ -216,10 +228,12 @@ for fid in file_ids:
             ),
         )
 
-# Copy links
+# Copy only the file links that are part of the public model context.
 for col_id in collection_ids:
     links = src_cur.execute("select * from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
     for link in links:
+        if link["file_id"] not in file_ids:
+            continue
         dst_cur.execute(
             """
             insert or replace into knowledge_file
@@ -265,18 +279,45 @@ params["temperature"] = 0
 model_meta = json.loads(model["meta"] or "{}")
 model_meta["description"] = "公开访客专用：只根据当前绑定知识库回答"
 
-# Rebuild knowledge bindings from the freshly imported public records. Keeping
-# old model metadata can leave the public site attached to stale collections.
+# Rebuild knowledge bindings from the freshly imported public records. The
+# public model intentionally uses direct file bindings instead of collection
+# bindings so stale collection-level vectors cannot leak into visitor answers.
 rebuilt_knowledge = []
-for col_id in collection_ids:
-    row = dst_cur.execute("select id, name, description from knowledge where id = ?", (col_id,)).fetchone()
-    if row:
-        rebuilt_knowledge.append({
-            "id": row["id"],
-            "name": row["name"],
-            "description": row["description"],
-            "type": "collection",
-        })
+for fid in file_ids:
+    row = dst_cur.execute("select * from file where id = ?", (fid,)).fetchone()
+    if not row:
+        continue
+    try:
+        file_data = json.loads(row["data"] or "{}")
+    except json.JSONDecodeError:
+        file_data = {}
+    try:
+        file_meta = json.loads(row["meta"] or "{}")
+    except json.JSONDecodeError:
+        file_meta = {}
+    file_record = {
+        "id": row["id"],
+        "user_id": public_user_id,
+        "hash": row["hash"],
+        "filename": row["filename"],
+        "path": row["path"],
+        "data": file_data,
+        "meta": file_meta,
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "status": True,
+    }
+    rebuilt_knowledge.append({
+        "type": "file",
+        "file": file_record,
+        "id": row["id"],
+        "url": row["id"],
+        "name": row["filename"],
+        "status": "uploaded",
+        "size": file_meta.get("size", 0),
+        "error": "",
+        "itemId": str(uuid.uuid4()),
+    })
 model_meta["knowledge"] = rebuilt_knowledge
 model_meta["capabilities"] = {
     "file_context": True,

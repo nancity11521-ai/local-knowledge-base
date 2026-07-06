@@ -1,7 +1,7 @@
 (function () {
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260706-2';
-  const PUBLIC_KB_VERSION = '20260706-rag-sync-1';
+  const PUBLIC_STYLE_VERSION = '20260706-4';
+  const PUBLIC_KB_VERSION = '20260706-rag-sync-3';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
@@ -312,6 +312,10 @@
   }
 
   function enableTemporaryChat() {
+    localStorage.setItem('temporary-chat', 'true');
+    localStorage.setItem('temporaryChat', 'true');
+    sessionStorage.setItem('temporary-chat', 'true');
+    sessionStorage.setItem('temporaryChat', 'true');
     const button = document.getElementById('temporary-chat-button');
     if (!button || button.dataset.publicTemporaryTouched === 'true') return;
     const active = button.getAttribute('aria-pressed') === 'true'
@@ -348,12 +352,20 @@
   }
 
   function hideModelPicker() {
-    document.querySelectorAll('div, section, aside').forEach((node) => {
+    document.querySelectorAll('[role="dialog"], [popover], div.fixed, div.absolute, div[aria-modal="true"]').forEach((node) => {
       const value = (node.textContent || '').trim();
       const isModelPicker = value.includes(PUBLIC_MODEL_ID)
         && (value.includes('暂无可用模型') || value.includes('No available models') || value.includes('管理连接'));
       if (isModelPicker) node.style.setProperty('display', 'none', 'important');
     });
+  }
+
+  function enforcePublicModel() {
+    localStorage.setItem('selectedModel', PUBLIC_MODEL_ID);
+    localStorage.setItem('selectedModels', JSON.stringify([PUBLIC_MODEL_ID]));
+    localStorage.setItem('chatModel', PUBLIC_MODEL_ID);
+    sessionStorage.setItem('selectedModel', PUBLIC_MODEL_ID);
+    sessionStorage.setItem('selectedModels', JSON.stringify([PUBLIC_MODEL_ID]));
   }
 
   function textContentOf(node) {
@@ -363,7 +375,7 @@
   function hidePublicChrome() {
     document.body.dataset.publicMode = 'true';
 
-    document.querySelectorAll('#temporary-chat-button, #input-menu-button, #confirm-recording-button').forEach((node) => {
+    document.querySelectorAll('#temporary-chat-button, #input-menu-button, #confirm-recording-button, #sidebar-search-button, #sidebar-notes-button, #pinned-menu-items-list').forEach((node) => {
       node.style.setProperty('display', 'none', 'important');
     });
 
@@ -372,10 +384,6 @@
       if (className.includes('bg-indigo') && !button.closest('#public-suggestions')) {
         button.style.setProperty('display', 'none', 'important');
       }
-    });
-
-    document.querySelectorAll('#sidebar-search-button, #sidebar-notes-button, #pinned-menu-items-list').forEach((node) => {
-      node.style.setProperty('display', 'none', 'important');
     });
 
     document.querySelectorAll('#sidebar div').forEach((node) => {
@@ -406,6 +414,14 @@
       if (isControl) button.style.setProperty('display', 'none', 'important');
     });
 
+    document.querySelectorAll('aside a, aside button, #sidebar a, #sidebar button, [id*="sidebar"] a, [id*="sidebar"] button').forEach((node) => {
+      const text = textContentOf(node);
+      const keep = /新对话|New chat|GMKtec AI客服|GMK AI Support/.test(text);
+      if (!keep && !node.closest('#public-language-switcher')) {
+        node.style.setProperty('display', 'none', 'important');
+      }
+    });
+
     document.querySelectorAll('button img, [role=\"button\"] img').forEach((img) => {
       const button = img.closest('button, [role=\"button\"]');
       const label = `${button?.getAttribute('aria-label') || ''} ${button?.getAttribute('title') || ''} ${textContentOf(button)}`.toLowerCase();
@@ -428,35 +444,27 @@
     });
   }
 
-  function localizeSuggestions() {
-    const text = UI_TEXT[getLanguage()] || UI_TEXT['zh-CN'];
-    const hasNativeSuggestionText = (node) => {
-      const value = textContentOf(node);
-      return value.includes('Tell me a fun fact')
-        || value.includes('Overcome procrastination')
-        || value.includes('Give me ideas')
-        || value.includes('Explain options trading')
-        || value.includes('Help me study')
-        || value.includes('Show me a code snippet')
-        || value.includes('sticky header')
-        || value.includes('college entrance exam')
-        || value.includes('about the Roman Empire')
-        || value.includes('give me tips')
-        || value.includes("kids' art");
-    };
-
-    document.querySelectorAll('div').forEach((node) => {
+  function hideNativeSuggestions() {
+    const nativeTexts = [
+      'Tell me a fun fact',
+      'Overcome procrastination',
+      'Give me ideas',
+      'Explain options trading',
+      'Show me a code snippet',
+      'Help me study'
+    ];
+    document.querySelectorAll('#chat-pane .mx-auto, main .mx-auto').forEach((node) => {
       if (node.id === 'public-suggestions' || node.closest('#public-suggestions')) return;
-      if (!hasNativeSuggestionText(node)) return;
-      if (node.querySelector('#chat-input, textarea, input, #chat-input-container')) return;
-      node.style.setProperty('display', 'none', 'important');
-    });
-    document.querySelectorAll('button').forEach((button) => {
-      if (button.closest('#public-suggestions')) return;
-      if (hasNativeSuggestionText(button)) {
-        button.style.setProperty('display', 'none', 'important');
+      const value = textContentOf(node);
+      if (nativeTexts.some((item) => value.includes(item))) {
+        node.style.setProperty('display', 'none', 'important');
       }
     });
+  }
+
+  function localizeSuggestions() {
+    const text = UI_TEXT[getLanguage()] || UI_TEXT['zh-CN'];
+    hideNativeSuggestions();
 
     const anchor = document.getElementById('chat-input-container')
       || document.getElementById('chat-input')?.closest('form, .relative, .w-full');
@@ -505,6 +513,7 @@
         return;
       }
       button.dataset.publicSendButton = 'true';
+      button.dataset.publicSendConverted = 'true';
       button.setAttribute('aria-label', 'Send');
       button.setAttribute('title', 'Send');
       button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="public-send-arrow"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -596,33 +605,13 @@
     hidePublicChrome();
     localizeSuggestions();
     enableTemporaryChat();
-    document.querySelectorAll('div, p, span').forEach((node) => {
-      if (node.children.length === 0 && (node.textContent || '').trim() === text.model) {
-        delete node.dataset.publicHeroTitle;
-        delete node.dataset.publicChatTitle;
-
-        const isWelcomeTitle = location.pathname === '/' && node.closest('.m-auto.w-full');
-        const isTopBarTitle = node.closest('nav');
-        if (isWelcomeTitle) {
-          node.dataset.publicHeroTitle = 'true';
-        } else if (isTopBarTitle) {
-          const topBar = node.closest('nav');
-          if (topBar) {
-            topBar.dataset.publicTopBar = 'true';
-          }
-          node.dataset.publicChatTitle = 'true';
-        }
-      }
-      if (node.children.length === 0 && (node.textContent || '').trim() === text.description) {
-        node.dataset.publicSubtitle = 'true';
-      }
-    });
     enhancePublicHome();
   }
 
   function scheduleRender(force) {
     requestAnimationFrame(() => {
       makeSwitcher();
+      enforcePublicModel();
       applyVisibleLanguage();
       hideModelPicker();
     });
@@ -634,17 +623,15 @@
     window.__publicLanguageObserver = new MutationObserver(() => {
       if (renderQueued) return;
       renderQueued = true;
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         renderQueued = false;
         applyVisibleLanguage();
         hideModelPicker();
-      });
+      }, 250);
     });
     window.__publicLanguageObserver.observe(document.body, {
       childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['data-placeholder']
+      subtree: true
     });
   }
 
@@ -663,6 +650,10 @@
       url.searchParams.set('model', PUBLIC_MODEL_ID);
       changed = true;
     }
+    if (url.searchParams.get('temporary-chat') !== 'true') {
+      url.searchParams.set('temporary-chat', 'true');
+      changed = true;
+    }
     if (!changed) return;
     history.replaceState(history.state, '', url.toString());
   }
@@ -671,6 +662,7 @@
     loadCurrentStyles();
     logVisit();
     setLanguage(getLanguage(), false);
+    enforcePublicModel();
     keepLanguageInUrl();
     patchFetch();
     patchChatSubmit();

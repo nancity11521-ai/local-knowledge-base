@@ -67,10 +67,22 @@
 }
 
 body[data-public-mode="true"] #temporary-chat-button,
+body[data-public-mode="true"] #input-menu-button,
+body[data-public-mode="true"] #confirm-recording-button,
+body[data-public-mode="true"] #sidebar-search-button,
+body[data-public-mode="true"] #sidebar-notes-button,
+body[data-public-mode="true"] #pinned-menu-items-list,
 body[data-public-mode="true"] button[aria-label*="Controls"],
 body[data-public-mode="true"] button[title*="Controls"],
 body[data-public-mode="true"] button[aria-label*="User menu"],
-body[data-public-mode="true"] button[aria-label*="用户菜单"] {
+body[data-public-mode="true"] button[aria-label*="用户菜单"],
+body[data-public-mode="true"] button[aria-label*="Add Model"],
+body[data-public-mode="true"] button[title*="Add Model"],
+body[data-public-mode="true"] button[aria-label*="添加模型"],
+body[data-public-mode="true"] button[aria-label*="Voice mode"],
+body[data-public-mode="true"] button[title*="Voice mode"],
+body[data-public-mode="true"] button[aria-label*="语音模式"],
+body[data-public-mode="true"] button[title*="语音模式"] {
   display: none !important;
 }
 
@@ -88,6 +100,40 @@ body[data-public-mode="true"] [data-public-send-button="true"] {
 .public-send-arrow {
   height: 22px;
   width: 22px;
+}
+
+body[data-public-mode="true"] [data-public-send-button="true"] svg {
+  display: block !important;
+}
+
+body[data-public-mode="true"] [data-public-send-button="true"][style] {
+  display: inline-flex !important;
+}
+
+body[data-public-mode="true"] aside [role="button"]:has(img),
+body[data-public-mode="true"] #sidebar [role="button"]:has(img),
+body[data-public-mode="true"] aside button:has(img[alt*="User"]),
+body[data-public-mode="true"] #sidebar button:has(img[alt*="User"]) {
+  display: none !important;
+}
+
+body[data-public-mode="true"] aside a:not([href="/"]):not([href^="/?"]),
+body[data-public-mode="true"] #sidebar a:not([href="/"]):not([href^="/?"]) {
+  display: none !important;
+}
+
+body[data-public-mode="true"] aside div:has(> span > button[aria-label*="User"]),
+body[data-public-mode="true"] #sidebar div:has(> span > button[aria-label*="User"]) {
+  display: none !important;
+}
+
+body[data-public-mode="true"] button {
+  --public-button-guard: 1;
+}
+
+body[data-public-mode="true"] button:has(+ button[aria-label*="Add Model"]),
+body[data-public-mode="true"] button:has(+ button[title*="Add Model"]) {
+  display: none !important;
 }
 
 #public-suggestions {
