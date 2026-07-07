@@ -211,3 +211,13 @@ body[data-public-mode="true"] button:has(+ button[title*="Add Model"]) {
 html[dir="rtl"] .public-suggestion-item {
   text-align: right;
 }
+
+/* Instantly hide the follow-up questions section in all languages at the browser stylesheet level to prevent flashing */
+.mt-4:has(button[aria-label*="追问"]),
+.mt-4:has(button[aria-label*="Follow-up"]),
+.mt-4:has(button[aria-label*="Follow up"]),
+.mt-4:has(button[aria-label*="関連する質問"]),
+.mt-4:has(button[aria-label*="후속 질문"]),
+.mt-4:has(button[aria-label*="Preguntas de seguimiento"]) {
+  display: none !important;
+}

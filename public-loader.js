@@ -623,47 +623,73 @@
   }
 
   function localizeSuggestions() {
-    const text = UI_TEXT[getLanguage()] || UI_TEXT['zh-CN'];
     hideNativeSuggestions();
-
-    const anchor = document.getElementById('chat-input-container')
-      || document.getElementById('chat-input')?.closest('form, .relative, .w-full');
-    if (!anchor) return;
-
-    let block = document.getElementById('public-suggestions');
-    if (!block) {
-      block = document.createElement('div');
-      block.id = 'public-suggestions';
-      anchor.insertAdjacentElement('afterend', block);
+    const block = document.getElementById('public-suggestions');
+    if (block) {
+      block.remove();
     }
+  }
 
-    if (block.dataset.publicSuggestionsLocalized !== getLanguage()) {
-      block.dataset.publicSuggestionsLocalized = getLanguage();
-      block.innerHTML = `
-        <div class="public-suggestions-title">${text.suggestionsTitle}</div>
-        ${text.suggestions.map(([title, desc]) => `
-          <button type="button" class="public-suggestion-item" data-public-suggestion="${title} ${desc}">
-            <span>${title}</span>
-            <small>${desc}</small>
-          </button>
-        `).join('')}
-      `;
-      block.querySelectorAll('.public-suggestion-item').forEach((item) => {
-        item.addEventListener('click', () => {
-          const editor = document.getElementById('chat-input');
-          if (!editor) return;
-          editor.textContent = item.dataset.publicSuggestion || '';
-          editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: editor.textContent }));
-          editor.focus();
-        });
-      });
-    }
+  function hideFollowUpQuestions() {
+    const keywords = [
+      '追问', '追問', 'Follow up', 'Follow-up', 
+      '関連する質問', 'フォローアップ', '후속 질문', '추가 질문', 
+      'Preguntas de seguimiento', 'Seguimiento', 'Questions de suivi', 'Suivi', 
+      'Folgefragen', 'Nachverfolgung', 'أسئلة المتابعة', 'متابعة'
+    ];
+    document.querySelectorAll('div').forEach((node) => {
+      if (!node.classList.contains('text-sm') || !node.classList.contains('font-medium')) return;
+      const text = (node.textContent || '').trim();
+      if (keywords.includes(text)) {
+        const parent = node.closest('.mt-4') || node.parentElement;
+        if (parent) {
+          parent.style.setProperty('display', 'none', 'important');
+        }
+      }
+    });
+    document.querySelectorAll('button[aria-label]').forEach((button) => {
+      const label = button.getAttribute('aria-label') || '';
+      const isFollowup = label.startsWith('追问：') || 
+                         label.startsWith('Follow-up:') || 
+                         label.startsWith('Follow up:') ||
+                         label.startsWith('関連する質問：') ||
+                         label.startsWith('후속 질문：') ||
+                         label.startsWith('Preguntas de seguimiento:');
+      if (isFollowup) {
+        const parent = button.closest('.mt-4') || button.parentElement;
+        if (parent) {
+          parent.style.setProperty('display', 'none', 'important');
+        }
+      }
+    });
+  }
+
+  function hideWelcomeDescription() {
+    document.querySelectorAll('div, p, span').forEach((node) => {
+      if (node.children.length > 0) return;
+      const text = (node.textContent || '').trim();
+      const isDesc = text === '公开访客专用：只根据当前绑定知识库回答' ||
+                     text === '公开访客专用：只根据需求文档知识库回答' ||
+                     text === '问AI·7*24小时 智能服务' ||
+                     text === 'AI-powered search makes finding answers easier.' ||
+                     text === 'AIスマート検索で、答えがもっと簡単に見つかります。' ||
+                     text === 'AI 스마트 검색으로 더 쉽게 답을 찾아보세요.' ||
+                     text === 'La búsqueda inteligente con IA facilita encontrar respuestas.' ||
+                     text === 'La recherche intelligente par IA facilite l’obtention de réponses.' ||
+                     text === 'Mit der intelligenten KI-Suche finden Sie Antworten leichter.' ||
+                     text === 'يجعل البحث الذكي بالذكاء الاصطناعي العثور على الإجابات أسهل.' ||
+                     (text.includes('公开访客') && text.includes('知识库'));
+      if (isDesc) {
+        node.style.setProperty('display', 'none', 'important');
+      }
+    });
   }
 
   function convertVoiceToSend() {
     const editor = document.getElementById('chat-input');
     if (!editor) return;
-    const buttons = [...document.querySelectorAll('button')].filter((button) => {
+    const inputArea = editor.closest('form') || document.getElementById('chat-input-container') || document;
+    const buttons = [...inputArea.querySelectorAll('button')].filter((button) => {
       const className = String(button.className || '');
       return className.includes('bg-black') && className.includes('text-white');
     });
@@ -766,6 +792,8 @@
     localizeSuggestions();
     enableTemporaryChat();
     enhancePublicHome();
+    hideFollowUpQuestions();
+    hideWelcomeDescription();
   }
 
   function scheduleRender(force) {
@@ -781,13 +809,15 @@
     if (window.__publicLanguageObserver) return;
     let renderQueued = false;
     window.__publicLanguageObserver = new MutationObserver(() => {
+      hideFollowUpQuestions();
+      hideWelcomeDescription();
       if (renderQueued) return;
       renderQueued = true;
       setTimeout(() => {
         renderQueued = false;
         applyVisibleLanguage();
         hideModelPicker();
-      }, 250);
+      }, 80);
     });
     window.__publicLanguageObserver.observe(document.body, {
       childList: true,
