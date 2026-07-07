@@ -62,7 +62,7 @@ else
   warn "Public web endpoint is not responding on port ${PUBLIC_WEBUI_PORT_VALUE}."
 fi
 
-if curl -fsS "http://127.0.0.1:${PUBLIC_WEBUI_PORT_VALUE}/static/loader.js" | grep -q "__PUBLIC_LOADER_VERSION"; then
+if curl -fsS "http://127.0.0.1:${PUBLIC_WEBUI_PORT_VALUE}/static/loader.js" | grep -q "PUBLIC_STYLE_VERSION"; then
   ok "Public loader is available."
 else
   warn "Public loader was not found or is stale."

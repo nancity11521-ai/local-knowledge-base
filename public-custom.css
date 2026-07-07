@@ -68,6 +68,8 @@
 
 body[data-public-mode="true"] #temporary-chat-button,
 body[data-public-mode="true"] #input-menu-button,
+body[data-public-mode="true"] #integration-menu-button,
+body[data-public-mode="true"] #generate-message-pair-button,
 body[data-public-mode="true"] #confirm-recording-button,
 body[data-public-mode="true"] #sidebar-search-button,
 body[data-public-mode="true"] #sidebar-notes-button,

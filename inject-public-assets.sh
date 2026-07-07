@@ -12,7 +12,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
 }
 
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
-PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260706-5}"
+PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260707-2}"
 
 if ! "${DOCKER_BIN}" ps --format '{{.Names}}' | grep -qx "${PUBLIC_CONTAINER}"; then
   echo "Public container is not running: ${PUBLIC_CONTAINER}"
@@ -39,9 +39,8 @@ for path in targets:
     if not path.exists():
         continue
     text = path.read_text(encoding="utf-8")
-    if "/static/loader.js" in text:
-        text = re.sub(r'\s*<script src="/static/loader\.js\?v=[^"]*" defer crossorigin="use-credentials"></script>', "", text)
-        text = re.sub(r'\s*<link rel="stylesheet" href="/static/custom\.css\?v=[^"]*" crossorigin="use-credentials" />', "", text)
+    text = re.sub(r'\s*<script[^>]+src="/static/loader\.js(?:\?v=[^"]*)?"[^>]*></script>', "", text)
+    text = re.sub(r'\s*<link[^>]+href="/static/custom\.css(?:\?v=[^"]*)?"[^>]*>', "", text)
     if "</head>" not in text:
         continue
     text = text.replace("</head>", f"{block}\t</head>", 1)

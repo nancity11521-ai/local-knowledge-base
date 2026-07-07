@@ -32,6 +32,8 @@ services:
       - "${PUBLIC_WEBUI_PORT:-3001}:8080"
     env_file:
       - .env.public
+    environment:
+      - BYPASS_MODEL_ACCESS_CONTROL=${BYPASS_MODEL_ACCESS_CONTROL:-True}
     volumes:
       - open-webui-public-data:/app/backend/data
       - ./seed-docs:/seed-docs:ro

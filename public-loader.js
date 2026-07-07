@@ -1,8 +1,18 @@
 (function () {
+  if (window.__PUBLIC_LOADER_ACTIVE__) return;
+  window.__PUBLIC_LOADER_ACTIVE__ = true;
+
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260706-5';
-  const PUBLIC_KB_VERSION = '20260706-rag-sync-4';
+  const PUBLIC_STYLE_VERSION = '20260707-2';
+  const PUBLIC_KB_VERSION = '20260707-rag-sync-7';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
+  const PUBLIC_KNOWLEDGE_FALLBACK = [
+    { type: 'collection', id: 'e1341cb3-a334-460e-8756-1b65e42f4351', name: 'g3问题库' },
+    { type: 'file', id: 'd68dc2b4-3b4c-47ef-ae0c-eaac648da3f9', name: 'K17（intel Ultra 5 226V）产品规格书 20260306 (1).pdf' },
+    { type: 'file', id: '3e20f6c2-608f-4ce6-8903-beb5d3a7c88f', name: 'G3 Pro（intel i3-10110U）产品规格书（MINI PC）20260120 (1).pdf' },
+    { type: 'file', id: 'fae7f0ba-f203-4559-b492-9a9ad07bd0a5', name: '双风扇系列设备风扇异响排查 - 副本.docx' },
+    { type: 'file', id: 'b56ffbd7-9249-4adb-86e9-c0ae3af769d5', name: '设备开机卡在 LOGO 画面_无法进入系统排查指南 - 副本.docx' }
+  ];
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
@@ -220,6 +230,46 @@
     ].join(' ');
   }
 
+  function knowledgeFromModel(model) {
+    const sources = [
+      model?.meta?.knowledge,
+      model?.info?.meta?.knowledge,
+      model?.model?.meta?.knowledge,
+      model?.data?.meta?.knowledge
+    ];
+    return sources.find((items) => Array.isArray(items) && items.length) || [];
+  }
+
+  function rememberModelKnowledge(model) {
+    const knowledge = knowledgeFromModel(model);
+    if (knowledge.length) window.__PUBLIC_MODEL_KNOWLEDGE__ = knowledge;
+  }
+
+  function publicKnowledgeItems() {
+    const dynamic = Array.isArray(window.__PUBLIC_MODEL_KNOWLEDGE__) ? window.__PUBLIC_MODEL_KNOWLEDGE__ : [];
+    return dynamic.length ? dynamic : PUBLIC_KNOWLEDGE_FALLBACK;
+  }
+
+  function mergePublicKnowledgeFiles(files) {
+    const existing = Array.isArray(files) ? files : [];
+    const seen = new Set(existing.map((item) => `${item?.type || 'file'}:${item?.id || item?.collection_name || item?.name}`));
+    const next = [...existing];
+    publicKnowledgeItems().forEach((item) => {
+      const id = item?.id || item?.collection_name || item?.name;
+      if (!id) return;
+      const key = `${item?.type || 'file'}:${id}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      next.push({
+        type: item.type || 'file',
+        id: item.id,
+        name: item.name,
+        collection_name: item.collection_name
+      });
+    });
+    return next.filter((item) => item && (item.id || item.collection_name || item.name));
+  }
+
   function applyLanguageInstruction(payload) {
     const instruction = answerInstruction();
     function updateMessages(container, key) {
@@ -251,6 +301,8 @@
     payload.public_response_language = getLanguage();
     payload.public_kb_version = PUBLIC_KB_VERSION;
     payload.model = PUBLIC_MODEL_ID;
+    payload.files = mergePublicKnowledgeFiles(payload.files);
+    payload.features = { ...(payload.features || {}), web_search: false };
     if (Array.isArray(payload.models)) payload.models = [PUBLIC_MODEL_ID];
     payload.metadata = {
       ...(payload.metadata || {}),
@@ -261,6 +313,69 @@
     return payload;
   }
 
+  function publicModelObject() {
+    const knowledge = publicKnowledgeItems();
+    return {
+      id: PUBLIC_MODEL_ID,
+      name: '智能问答',
+      object: 'model',
+      owned_by: 'openai',
+      base_model_id: 'deepseek-v4-flash',
+      info: {
+        id: PUBLIC_MODEL_ID,
+        name: '智能问答',
+        base_model_id: 'deepseek-v4-flash',
+        is_active: true,
+        meta: { public_kb_version: PUBLIC_KB_VERSION, knowledge }
+      },
+      meta: { public_kb_version: PUBLIC_KB_VERSION, knowledge }
+    };
+  }
+
+  function publicModelFrom(item) {
+    const base = publicModelObject();
+    if (!item || typeof item !== 'object') return base;
+    rememberModelKnowledge(item);
+    const knowledge = publicKnowledgeItems();
+    return {
+      ...base,
+      ...item,
+      id: PUBLIC_MODEL_ID,
+      name: item.name || base.name,
+      base_model_id: item.base_model_id || base.base_model_id,
+      meta: { ...(base.meta || {}), ...(item.meta || {}), knowledge },
+      info: {
+        ...(base.info || {}),
+        ...(item.info || {}),
+        id: PUBLIC_MODEL_ID,
+        name: item.info?.name || item.name || base.info.name,
+        base_model_id: item.info?.base_model_id || item.base_model_id || base.info.base_model_id,
+        is_active: true,
+        meta: { ...(base.info?.meta || {}), ...(item.info?.meta || {}), knowledge }
+      }
+    };
+  }
+
+  function onlyPublicModelResponse(data) {
+    const findPublicModel = (items) => items.find((item) => item?.id === PUBLIC_MODEL_ID || item?.name === PUBLIC_MODEL_ID);
+    if (Array.isArray(data)) return [publicModelFrom(findPublicModel(data))];
+    if (data && typeof data === 'object') {
+      if (Array.isArray(data.data)) return { ...data, data: [publicModelFrom(findPublicModel(data.data))] };
+      if (Array.isArray(data.models)) return { ...data, models: [publicModelFrom(findPublicModel(data.models))] };
+      if (data.id === PUBLIC_MODEL_ID) return publicModelFrom(data);
+      return { ...data, data: [publicModelFrom()], models: [publicModelFrom()] };
+    }
+    return { data: [publicModelFrom()], models: [publicModelFrom()] };
+  }
+
+  function syntheticPublicModelResponse() {
+    return new Response(JSON.stringify(onlyPublicModelResponse(null)), {
+      status: 200,
+      statusText: 'OK',
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+
   function patchFetch() {
     if (window.__publicLanguageFetchPatched) return;
     window.__publicLanguageFetchPatched = true;
@@ -269,6 +384,7 @@
       try {
         const url = typeof input === 'string' ? input : input?.url || '';
         const method = (init?.method || input?.method || 'GET').toUpperCase();
+        const isModelRequest = method === 'GET' && /\/api\/(v1\/)?models(\/|\?|$)|\/api\/model(\/|\?|$)/.test(url);
         const isChatRequest = method === 'POST' && /\/(api\/)?chat\/completions|\/api\/chat|\/chat\//.test(url);
         let body = init?.body;
         if (isChatRequest && typeof body !== 'string' && input instanceof Request) {
@@ -276,11 +392,27 @@
         }
         if (isChatRequest && typeof body === 'string') {
           const payload = JSON.parse(body);
-          const nextBody = JSON.stringify(applyLanguageInstruction(payload));
+          const nextPayload = applyLanguageInstruction(payload);
+          window.__PUBLIC_LAST_CHAT_PAYLOAD__ = nextPayload;
+          const nextBody = JSON.stringify(nextPayload);
           if (input instanceof Request && !init?.body) {
             input = new Request(input, { body: nextBody });
           } else {
             init = { ...init, body: nextBody };
+          }
+        }
+        if (isModelRequest) {
+          try {
+            const response = await originalFetch(input, init);
+            const data = await response.clone().json();
+            const next = JSON.stringify(onlyPublicModelResponse(data));
+            return new Response(next, {
+              status: 200,
+              statusText: 'OK',
+              headers: { ...Object.fromEntries(response.headers.entries()), 'content-type': 'application/json' }
+            });
+          } catch (_) {
+            return syntheticPublicModelResponse();
           }
         }
       } catch (_) {
@@ -462,6 +594,13 @@
       const shouldHide = /搜索|笔记|模型|分组|对话|今天|过去|Search|Notes|Models|Groups|Chats|Today|User/.test(text)
         && !/新对话|New chat/.test(text);
       if (shouldHide) node.style.setProperty('display', 'none', 'important');
+    });
+
+    document.querySelectorAll('aside h2, aside h3, aside nav, aside a, aside button, aside div').forEach((node) => {
+      const text = textContentOf(node);
+      const keep = /新对话|New chat|GMKtec AI客服|GMK AI Support/.test(text);
+      const shouldHide = /搜索|笔记|模型|分组|对话|今天|过去|User|Search|Notes|Models|Groups|Chats|Today|Yesterday|History|conversation/i.test(text);
+      if (shouldHide && !keep) node.style.setProperty('display', 'none', 'important');
     });
   }
 
