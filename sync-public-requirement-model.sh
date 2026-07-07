@@ -355,6 +355,9 @@ for knowledge_item in model_meta.get("knowledge", []):
         "email": public_user["email"],
     }
 
+import os
+base_model_id = os.environ.get("OPENAI_MODEL", "deepseek-chat")
+
 dst_cur.execute(
     """
     insert or replace into model
@@ -364,7 +367,7 @@ dst_cur.execute(
     (
         model["id"],
         public_user_id,
-        model["base_model_id"],
+        base_model_id,
         model["name"],
         json.dumps(params, ensure_ascii=False),
         json.dumps(model_meta, ensure_ascii=False),
