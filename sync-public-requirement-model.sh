@@ -374,6 +374,21 @@ dst_cur.execute(
     ),
 )
 
+# Force-update OpenAI connections in the config table to match the public proxy
+try:
+    import os
+    proxy_url = os.environ.get("OPENAI_API_BASE_URL", "http://token-cache-proxy:8000/v1")
+    proxy_key = os.environ.get("OPENAI_API_KEY", "")
+    
+    dst_cur.execute("insert or replace into config (key, value) values ('openai.api_base_urls', ?)", (json.dumps([proxy_url]),))
+    if proxy_key:
+        dst_cur.execute("insert or replace into config (key, value) values ('openai.api_keys', ?)", (json.dumps([proxy_key]),))
+    dst_cur.execute("insert or replace into config (key, value) values ('openai.enable', 'true')")
+    dst_cur.execute("insert or replace into config (key, value) values ('enable_ollama_api', 'false')")
+    print("Forced public OpenAI API connection settings update in database.")
+except Exception as e:
+    print(f"Warning: Failed to force-update config: {e}")
+
 dst.commit()
 print("Imported public model:", model_id)
 print("Imported collections:", len(collection_ids))
