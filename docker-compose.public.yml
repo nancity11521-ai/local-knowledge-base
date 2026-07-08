@@ -34,6 +34,9 @@ services:
       - .env.public
     environment:
       - BYPASS_MODEL_ACCESS_CONTROL=${BYPASS_MODEL_ACCESS_CONTROL:-True}
+      - ENABLE_OLLAMA_API=false
+      - USE_OLLAMA_DOCKER=false
+      - ENABLE_CUSTOM_MODEL_FALLBACK=${ENABLE_CUSTOM_MODEL_FALLBACK:-True}
     volumes:
       - open-webui-public-data:/app/backend/data
       - ./seed-docs:/seed-docs:ro
