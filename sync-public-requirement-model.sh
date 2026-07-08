@@ -16,6 +16,68 @@ PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 MODEL_ID="requirement-docs-kb"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 
+# Auto-sync API keys and base URL from the main .env to .env.public on sync to prevent empty/stale placeholders
+if [ -f .env ] && [ -f .env.public ]; then
+  echo "Syncing OpenAI API key and URL from .env to .env.public..."
+  
+  # Extract key and url from .env
+  MAIN_OPENAI_API_KEY=$(grep -E "^OPENAI_API_KEY=" .env | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
+  MAIN_UPSTREAM_BASE_URL=$(grep -E "^UPSTREAM_BASE_URL=" .env | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
+  
+  # If empty, check for alternate names
+  if [ -z "${MAIN_OPENAI_API_KEY}" ]; then
+    MAIN_OPENAI_API_KEY=$(grep -E "^UPSTREAM_API_KEY=" .env | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
+  fi
+  
+  # Update .env.public
+  if [ -n "${MAIN_OPENAI_API_KEY}" ]; then
+    # Escape special characters for sed
+    ESCAPED_KEY=$(printf '%s\n' "${MAIN_OPENAI_API_KEY}" | sed -e 's/[\/&]/\\&/g')
+    sed -i.bak "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=${ESCAPED_KEY}|" .env.public 2>/dev/null || \
+    sed -i "" "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=${ESCAPED_KEY}|" .env.public
+  fi
+  
+  if [ -n "${MAIN_UPSTREAM_BASE_URL}" ]; then
+    ESCAPED_URL=$(printf '%s\n' "${MAIN_UPSTREAM_BASE_URL}" | sed -e 's/[\/&]/\\&/g')
+    sed -i.bak "s|^UPSTREAM_BASE_URL=.*|UPSTREAM_BASE_URL=${ESCAPED_URL}|" .env.public 2>/dev/null || \
+    sed -i "" "s|^UPSTREAM_BASE_URL=.*|UPSTREAM_BASE_URL=${ESCAPED_URL}|" .env.public
+  fi
+fi
+
+# Ensure critical proxy and bypass settings are correct in .env.public
+if [ -f .env.public ]; then
+  echo "Applying public instance environment overrides to .env.public..."
+  
+  # Ensure OPENAI_API_BASE_URL points to the token-cache-proxy
+  sed -i.bak "s|^OPENAI_API_BASE_URL=.*|OPENAI_API_BASE_URL=http://token-cache-proxy:8000/v1|" .env.public 2>/dev/null || \
+  sed -i "" "s|^OPENAI_API_BASE_URL=.*|OPENAI_API_BASE_URL=http://token-cache-proxy:8000/v1|" .env.public
+
+  # Ensure Ollama is disabled
+  if grep -q "^ENABLE_OLLAMA_API=" .env.public; then
+    sed -i.bak "s|^ENABLE_OLLAMA_API=.*|ENABLE_OLLAMA_API=false|" .env.public 2>/dev/null || \
+    sed -i "" "s|^ENABLE_OLLAMA_API=.*|ENABLE_OLLAMA_API=false|" .env.public
+  else
+    echo "ENABLE_OLLAMA_API=false" >> .env.public
+  fi
+
+  if grep -q "^USE_OLLAMA_DOCKER=" .env.public; then
+    sed -i.bak "s|^USE_OLLAMA_DOCKER=.*|USE_OLLAMA_DOCKER=false|" .env.public 2>/dev/null || \
+    sed -i "" "s|^USE_OLLAMA_DOCKER=.*|USE_OLLAMA_DOCKER=false|" .env.public
+  else
+    echo "USE_OLLAMA_DOCKER=false" >> .env.public
+  fi
+
+  # Ensure access control bypass is enabled
+  if grep -q "^BYPASS_MODEL_ACCESS_CONTROL=" .env.public; then
+    sed -i.bak "s|^BYPASS_MODEL_ACCESS_CONTROL=.*|BYPASS_MODEL_ACCESS_CONTROL=True|" .env.public 2>/dev/null || \
+    sed -i "" "s|^BYPASS_MODEL_ACCESS_CONTROL=.*|BYPASS_MODEL_ACCESS_CONTROL=True|" .env.public
+  else
+    echo "BYPASS_MODEL_ACCESS_CONTROL=True" >> .env.public
+  fi
+
+  rm -f .env.public.bak
+fi
+
 TMP_DIR="${SCRIPT_DIR}/.sync-tmp"
 rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}/uploads"
