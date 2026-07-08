@@ -195,8 +195,11 @@ echo "Syncing vector database (embeddings)..."
 "${DOCKER_BIN}" exec "${PUBLIC_CONTAINER}" rm -rf /app/backend/data/vector_db
 "${DOCKER_BIN}" exec -i "${MAIN_CONTAINER}" tar -cf - -C /app/backend/data vector_db | "${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" tar -xf - -C /app/backend/data
 
-echo "Importing model, knowledge, and file records into public instance..."
-"${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" python - "${MODEL_ID}" "${KNOWLEDGE_NAME}" <<'PY'
+# Read the newly synchronized public env keys to pass them to the python script
+PUBLIC_OPENAI_API_KEY=$(grep -E "^OPENAI_API_KEY=" .env.public | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
+PUBLIC_OPENAI_API_BASE_URL=$(grep -E "^OPENAI_API_BASE_URL=" .env.public | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
+
+"${DOCKER_BIN}" exec -e OPENAI_API_KEY="${PUBLIC_OPENAI_API_KEY}" -e OPENAI_API_BASE_URL="${PUBLIC_OPENAI_API_BASE_URL}" -i "${PUBLIC_CONTAINER}" python3 - "${MODEL_ID}" "${KNOWLEDGE_NAME}" <<'PY'
 import json
 import sqlite3
 import sys
