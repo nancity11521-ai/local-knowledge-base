@@ -19,25 +19,45 @@ KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 # Auto-sync API keys and base URL from the main .env to .env.public on sync to prevent empty/stale placeholders
 python3 - <<'EOF_ENV'
 import os
+import subprocess
 
 def update_env_public():
-    env_path = ".env"
     public_path = ".env.public"
     
-    if not os.path.exists(env_path) or not os.path.exists(public_path):
-        print("Warning: .env or .env.public not found, skipping sync of API keys.")
+    if not os.path.exists(public_path):
+        print("Warning: .env.public not found, skipping sync of API keys.")
         return
         
-    # Read .env
     env_vars = {}
-    with open(env_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line_stripped = line.strip()
-            if not line_stripped or line_stripped.startswith("#"):
-                continue
-            if "=" in line_stripped:
-                key, val = line_stripped.split("=", 1)
-                env_vars[key.strip()] = val.strip().strip("'\"")
+    
+    # 1. Attempt to get vars from running main container
+    main_container = os.environ.get("MAIN_CONTAINER", "local-knowledge-base")
+    try:
+        res = subprocess.run(["docker", "exec", main_container, "env"], capture_output=True, text=True, timeout=5)
+        if res.returncode == 0:
+            for line in res.stdout.split("\n"):
+                line = line.strip()
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    env_vars[key.strip()] = val.strip()
+            print("Successfully extracted active API keys directly from the running main container.")
+    except Exception as e:
+        print(f"Note: Could not query main container environment ({e}), falling back to file...")
+
+    # 2. Fallback to reading .env file if container query failed or was empty
+    if not env_vars.get("OPENAI_API_KEY") and os.path.exists(".env"):
+        try:
+            with open(".env", "r", encoding="utf-8") as f:
+                for line in f:
+                    line_stripped = line.strip()
+                    if not line_stripped or line_stripped.startswith("#"):
+                        continue
+                    if "=" in line_stripped:
+                        key, val = line_stripped.split("=", 1)
+                        env_vars[key.strip()] = val.strip().strip("'\"")
+            print("Read API keys from local .env file.")
+        except Exception as e:
+            print(f"Note: Could not read .env file ({e})")
                 
     # Read .env.public
     public_lines = []
@@ -56,7 +76,7 @@ def update_env_public():
         "BYPASS_MODEL_ACCESS_CONTROL": "True"
     }
     
-    # Sync key from .env if available
+    # Sync key from .env/container if available
     api_key = env_vars.get("OPENAI_API_KEY") or env_vars.get("UPSTREAM_API_KEY")
     if api_key:
         forced_values["OPENAI_API_KEY"] = api_key
