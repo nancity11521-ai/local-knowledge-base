@@ -18,6 +18,39 @@ PROXY_CONTAINER="${PROXY_CONTAINER:-local-knowledge-base-token-cache}"
 echo "=== Open WebUI Public Instance Diagnostics ==="
 echo ""
 
+# 0. Git and Host File Status
+echo "--- 0. Git and Host File Status ---"
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "  Git branch: $(git branch --show-current 2>/dev/null || echo 'unknown')"
+  echo "  Latest commit: $(git log -n 1 --oneline 2>/dev/null || echo 'unknown')"
+  echo "  Git status (dirty files count): $(git status --porcelain | wc -l | xargs)"
+  if [ $(git status --porcelain | wc -l) -ne 0 ]; then
+    echo "  ⚠️ Warning: You have uncommitted changes or git conflicts! Running git pull might fail."
+    git status --short
+  fi
+else
+  echo "  Not in a git repository."
+fi
+
+if [ -f .env ]; then
+  echo "  ✅ .env file exists on host"
+else
+  echo "  ❌ .env file is MISSING on host!"
+fi
+
+if [ -f .env.public ]; then
+  echo "  ✅ .env.public file exists on host"
+  PUBLIC_ENV_KEY=$(grep -E "^OPENAI_API_KEY=" .env.public | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
+  if [ -n "${PUBLIC_ENV_KEY}" ]; then
+    echo "  .env.public key: ${PUBLIC_ENV_KEY:0:8}... (length ${#PUBLIC_ENV_KEY})"
+  else
+    echo "  .env.public key is EMPTY!"
+  fi
+else
+  echo "  ❌ .env.public file is MISSING on host!"
+fi
+echo ""
+
 # 1. Container status
 echo "--- 1. Container status ---"
 "${DOCKER_BIN}" ps --filter name="${PUBLIC_CONTAINER}" --filter name="${PROXY_CONTAINER}" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
