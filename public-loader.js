@@ -434,33 +434,18 @@
       const button = event.target?.closest?.('button');
       if (!button || !document.getElementById('chat-input')) return;
       if (button.dataset.publicSendButton === 'true') {
-        const editor = document.getElementById('chat-input');
-        const text = (editor?.innerText || editor?.value || '').trim();
-        if (!text) return;
-        
-        // Find the form and request submit (standard and Svelte-compatible way to trigger form onSubmit)
-        const form = editor.closest('form');
-        if (form) {
-          event.preventDefault();
-          event.stopPropagation();
-          form.requestSubmit();
-        } else {
-          const nativeSend = [...document.querySelectorAll('button')].find((candidate) => {
-            if (candidate === button || candidate.dataset.publicSendButton === 'true') return false;
-            const label = `${candidate.getAttribute('aria-label') || ''} ${candidate.getAttribute('title') || ''}`.toLowerCase();
-            return /send|submit|发送|提交/.test(label) && candidate.offsetParent !== null;
-          });
-          if (nativeSend) {
+        // Only manually handle/intercept if it is a converted (fake) send button.
+        // For native send buttons, let Svelte's native click handler run.
+        if (button.dataset.publicSendConverted === 'true') {
+          const editor = document.getElementById('chat-input');
+          const text = (editor?.innerText || editor?.value || '').trim();
+          if (!text) return;
+          
+          const form = editor.closest('form');
+          if (form) {
             event.preventDefault();
             event.stopPropagation();
-            nativeSend.click();
-          } else {
-            editor.dispatchEvent(new KeyboardEvent('keydown', {
-              key: 'Enter',
-              code: 'Enter',
-              bubbles: true,
-              cancelable: true
-            }));
+            form.requestSubmit();
           }
         }
         return;
@@ -712,10 +697,12 @@
         return;
       }
       button.dataset.publicSendButton = 'true';
-      button.dataset.publicSendConverted = 'true';
       button.setAttribute('aria-label', 'Send');
       button.setAttribute('title', 'Send');
-      button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="public-send-arrow"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      if (!button.querySelector('svg')) {
+        button.dataset.publicSendConverted = 'true';
+        button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="public-send-arrow"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      }
     });
   }
 
