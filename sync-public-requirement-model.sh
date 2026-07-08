@@ -178,7 +178,8 @@ for col_id in collection_ids:
 
 file_ids = list(set(file_ids))
 
-# Clear old entries in public DB to avoid stale data
+# Clear old entries in public DB to avoid stale data or access control conflicts
+dst_cur.execute("delete from model")
 dst_cur.execute("delete from knowledge")
 dst_cur.execute("delete from knowledge_file")
 dst_cur.execute("delete from file")
@@ -463,9 +464,8 @@ if public_user_row:
             print(f"Skipped updating collection {col.name}: {e}")
 CHROMA_PY
 
-echo
-echo "Restarting public instance..."
-"${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml restart open-webui-public
+echo "Restarting public instance with fresh configuration..."
+"${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d --force-recreate open-webui-public
 "${SCRIPT_DIR}/inject-public-assets.sh"
 
 echo
