@@ -435,20 +435,33 @@
       if (!button || !document.getElementById('chat-input')) return;
       if (button.dataset.publicSendButton === 'true') {
         const editor = document.getElementById('chat-input');
-        if (!(editor?.innerText || '').trim()) return;
-        const nativeSend = [...document.querySelectorAll('button')].find((candidate) => {
-          if (candidate === button || candidate.dataset.publicSendButton === 'true') return false;
-          const label = `${candidate.getAttribute('aria-label') || ''} ${candidate.getAttribute('title') || ''}`.toLowerCase();
-          return /send|submit|发送|提交/.test(label) && candidate.offsetParent !== null;
-        });
-        if (nativeSend) nativeSend.click();
-        else {
-          editor.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'Enter',
-            code: 'Enter',
-            bubbles: true,
-            cancelable: true
-          }));
+        const text = (editor?.innerText || editor?.value || '').trim();
+        if (!text) return;
+        
+        // Find the form and request submit (standard and Svelte-compatible way to trigger form onSubmit)
+        const form = editor.closest('form');
+        if (form) {
+          event.preventDefault();
+          event.stopPropagation();
+          form.requestSubmit();
+        } else {
+          const nativeSend = [...document.querySelectorAll('button')].find((candidate) => {
+            if (candidate === button || candidate.dataset.publicSendButton === 'true') return false;
+            const label = `${candidate.getAttribute('aria-label') || ''} ${candidate.getAttribute('title') || ''}`.toLowerCase();
+            return /send|submit|发送|提交/.test(label) && candidate.offsetParent !== null;
+          });
+          if (nativeSend) {
+            event.preventDefault();
+            event.stopPropagation();
+            nativeSend.click();
+          } else {
+            editor.dispatchEvent(new KeyboardEvent('keydown', {
+              key: 'Enter',
+              code: 'Enter',
+              bubbles: true,
+              cancelable: true
+            }));
+          }
         }
         return;
       }
