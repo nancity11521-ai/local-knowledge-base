@@ -15,6 +15,8 @@ MAIN_CONTAINER="${MAIN_CONTAINER:-local-knowledge-base}"
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 MODEL_ID="requirement-docs-kb"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
+export DOCKER_BIN
+export MAIN_CONTAINER
 
 # Auto-sync API keys and base URL from the main .env to .env.public on sync to prevent empty/stale placeholders
 python3 - <<'EOF_ENV'
@@ -30,19 +32,25 @@ def update_env_public():
         
     env_vars = {}
     
-    # 1. Attempt to get vars from running main container
+    # 1. Attempt to get vars from main container via docker inspect
     main_container = os.environ.get("MAIN_CONTAINER", "local-knowledge-base")
+    docker_bin = os.environ.get("DOCKER_BIN", "docker")
     try:
-        res = subprocess.run(["docker", "exec", main_container, "env"], capture_output=True, text=True, timeout=5)
+        import json
+        res = subprocess.run([docker_bin, "inspect", main_container], capture_output=True, text=True, timeout=5)
         if res.returncode == 0:
-            for line in res.stdout.split("\n"):
-                line = line.strip()
-                if "=" in line:
-                    key, val = line.split("=", 1)
-                    env_vars[key.strip()] = val.strip()
-            print("Successfully extracted active API keys directly from the running main container.")
+            inspect_data = json.loads(res.stdout)
+            if inspect_data:
+                env_list = inspect_data[0].get("Config", {}).get("Env", [])
+                for item in env_list:
+                    if "=" in item:
+                        k, v = item.split("=", 1)
+                        env_vars[k.strip()] = v.strip()
+                print("Successfully extracted active API keys directly from the main container metadata via docker inspect.")
+        else:
+            print(f"Note: docker inspect returned code {res.returncode}: {res.stderr.strip()}")
     except Exception as e:
-        print(f"Note: Could not query main container environment ({e}), falling back to file...")
+        print(f"Note: Could not query main container inspect ({e}), falling back to file...")
 
     # 2. Fallback to reading .env file if container query failed or was empty
     if not env_vars.get("OPENAI_API_KEY") and os.path.exists(".env"):

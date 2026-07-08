@@ -286,6 +286,10 @@ class Handler(BaseHTTPRequestHandler):
             body = exc.read()
             status = exc.code
             response_headers = dict(exc.headers.items())
+        except Exception as exc:
+            body = f'{{"error": {{"message": "Proxy connection to upstream failed: {exc}", "type": "proxy_error"}}}}'.encode('utf-8')
+            status = 502
+            response_headers = {"content-type": "application/json"}
 
         if cacheable and status == 200:
             try:
