@@ -17,66 +17,83 @@ MODEL_ID="requirement-docs-kb"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 
 # Auto-sync API keys and base URL from the main .env to .env.public on sync to prevent empty/stale placeholders
-if [ -f .env ] && [ -f .env.public ]; then
-  echo "Syncing OpenAI API key and URL from .env to .env.public..."
-  
-  # Extract key and url from .env
-  MAIN_OPENAI_API_KEY=$(grep -E "^OPENAI_API_KEY=" .env | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
-  MAIN_UPSTREAM_BASE_URL=$(grep -E "^UPSTREAM_BASE_URL=" .env | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
-  
-  # If empty, check for alternate names
-  if [ -z "${MAIN_OPENAI_API_KEY}" ]; then
-    MAIN_OPENAI_API_KEY=$(grep -E "^UPSTREAM_API_KEY=" .env | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
-  fi
-  
-  # Update .env.public
-  if [ -n "${MAIN_OPENAI_API_KEY}" ]; then
-    # Escape special characters for sed
-    ESCAPED_KEY=$(printf '%s\n' "${MAIN_OPENAI_API_KEY}" | sed -e 's/[\/&]/\\&/g')
-    sed -i.bak "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=${ESCAPED_KEY}|" .env.public 2>/dev/null || \
-    sed -i "" "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=${ESCAPED_KEY}|" .env.public
-  fi
-  
-  if [ -n "${MAIN_UPSTREAM_BASE_URL}" ]; then
-    ESCAPED_URL=$(printf '%s\n' "${MAIN_UPSTREAM_BASE_URL}" | sed -e 's/[\/&]/\\&/g')
-    sed -i.bak "s|^UPSTREAM_BASE_URL=.*|UPSTREAM_BASE_URL=${ESCAPED_URL}|" .env.public 2>/dev/null || \
-    sed -i "" "s|^UPSTREAM_BASE_URL=.*|UPSTREAM_BASE_URL=${ESCAPED_URL}|" .env.public
-  fi
-fi
+python3 - <<'EOF_ENV'
+import os
 
-# Ensure critical proxy and bypass settings are correct in .env.public
-if [ -f .env.public ]; then
-  echo "Applying public instance environment overrides to .env.public..."
-  
-  # Ensure OPENAI_API_BASE_URL points to the token-cache-proxy
-  sed -i.bak "s|^OPENAI_API_BASE_URL=.*|OPENAI_API_BASE_URL=http://token-cache-proxy:8000/v1|" .env.public 2>/dev/null || \
-  sed -i "" "s|^OPENAI_API_BASE_URL=.*|OPENAI_API_BASE_URL=http://token-cache-proxy:8000/v1|" .env.public
+def update_env_public():
+    env_path = ".env"
+    public_path = ".env.public"
+    
+    if not os.path.exists(env_path) or not os.path.exists(public_path):
+        print("Warning: .env or .env.public not found, skipping sync of API keys.")
+        return
+        
+    # Read .env
+    env_vars = {}
+    with open(env_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line_stripped = line.strip()
+            if not line_stripped or line_stripped.startswith("#"):
+                continue
+            if "=" in line_stripped:
+                key, val = line_stripped.split("=", 1)
+                env_vars[key.strip()] = val.strip().strip("'\"")
+                
+    # Read .env.public
+    public_lines = []
+    with open(public_path, "r", encoding="utf-8") as f:
+        public_lines = f.readlines()
+        
+    # Parse public keys and preserve comments/structure
+    new_lines = []
+    keys_updated = set()
+    
+    # Values we want to force-write
+    forced_values = {
+        "OPENAI_API_BASE_URL": "http://token-cache-proxy:8000/v1",
+        "ENABLE_OLLAMA_API": "false",
+        "USE_OLLAMA_DOCKER": "false",
+        "BYPASS_MODEL_ACCESS_CONTROL": "True"
+    }
+    
+    # Sync key from .env if available
+    api_key = env_vars.get("OPENAI_API_KEY") or env_vars.get("UPSTREAM_API_KEY")
+    if api_key:
+        forced_values["OPENAI_API_KEY"] = api_key
+        
+    upstream_url = env_vars.get("UPSTREAM_BASE_URL") or env_vars.get("OPENAI_API_BASE_URL")
+    if upstream_url:
+        forced_values["UPSTREAM_BASE_URL"] = upstream_url
 
-  # Ensure Ollama is disabled
-  if grep -q "^ENABLE_OLLAMA_API=" .env.public; then
-    sed -i.bak "s|^ENABLE_OLLAMA_API=.*|ENABLE_OLLAMA_API=false|" .env.public 2>/dev/null || \
-    sed -i "" "s|^ENABLE_OLLAMA_API=.*|ENABLE_OLLAMA_API=false|" .env.public
-  else
-    echo "ENABLE_OLLAMA_API=false" >> .env.public
-  fi
+    for line in public_lines:
+        line_stripped = line.strip()
+        # Keep comments and empty lines
+        if not line_stripped or line_stripped.startswith("#"):
+            new_lines.append(line)
+            continue
+            
+        if "=" in line_stripped:
+            key, val = line_stripped.split("=", 1)
+            key = key.strip()
+            if key in forced_values:
+                new_lines.append(f"{key}={forced_values[key]}\n")
+                keys_updated.add(key)
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+            
+    # Add any forced keys that weren't in .env.public originally
+    for key, val in forced_values.items():
+        if key not in keys_updated:
+            new_lines.append(f"{key}={val}\n")
+            
+    with open(public_path, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
+    print("Successfully synchronized .env.public settings and API keys.")
 
-  if grep -q "^USE_OLLAMA_DOCKER=" .env.public; then
-    sed -i.bak "s|^USE_OLLAMA_DOCKER=.*|USE_OLLAMA_DOCKER=false|" .env.public 2>/dev/null || \
-    sed -i "" "s|^USE_OLLAMA_DOCKER=.*|USE_OLLAMA_DOCKER=false|" .env.public
-  else
-    echo "USE_OLLAMA_DOCKER=false" >> .env.public
-  fi
-
-  # Ensure access control bypass is enabled
-  if grep -q "^BYPASS_MODEL_ACCESS_CONTROL=" .env.public; then
-    sed -i.bak "s|^BYPASS_MODEL_ACCESS_CONTROL=.*|BYPASS_MODEL_ACCESS_CONTROL=True|" .env.public 2>/dev/null || \
-    sed -i "" "s|^BYPASS_MODEL_ACCESS_CONTROL=.*|BYPASS_MODEL_ACCESS_CONTROL=True|" .env.public
-  else
-    echo "BYPASS_MODEL_ACCESS_CONTROL=True" >> .env.public
-  fi
-
-  rm -f .env.public.bak
-fi
+update_env_public()
+EOF_ENV
 
 TMP_DIR="${SCRIPT_DIR}/.sync-tmp"
 rm -rf "${TMP_DIR}"
