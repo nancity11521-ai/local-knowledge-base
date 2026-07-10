@@ -255,7 +255,10 @@ for col_id in collection_ids:
 
 # Sync and customize the model
 params = json.loads(model["params"] or "{}")
-params["temperature"] = 0
+
+# Preserve every source-model sampling parameter. The source model is made
+# deterministic by ensure-requirement-model.sh, so changing it here would make
+# the administrator and public answers diverge.
 
 model_meta = json.loads(model["meta"] or "{}")
 model_meta["description"] = "公开访客专用：只根据当前绑定知识库回答"
@@ -397,6 +400,22 @@ try:
     print("Forced public OpenAI API connection settings update in database.")
 except Exception as e:
     print(f"Warning: Failed to force-update config: {e}")
+
+# Retrieval settings are instance-level in Open WebUI. Copying only the vector
+# database is not sufficient: different RAG thresholds or top-k values can
+# retrieve different passages for the same question.
+try:
+    rag_rows = src_cur.execute(
+        "select key, value from config where key = 'rag' or key like 'rag.%'"
+    ).fetchall()
+    for row in rag_rows:
+        dst_cur.execute(
+            "insert or replace into config (key, value) values (?, ?)",
+            (row["key"], row["value"]),
+        )
+    print(f"Synchronized RAG configuration entries: {len(rag_rows)}")
+except Exception as e:
+    print(f"Warning: Failed to synchronize RAG configuration: {e}")
 
 dst.commit()
 print("Imported public model:", model_id)

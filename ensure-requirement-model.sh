@@ -26,8 +26,22 @@ con = sqlite3.connect("/app/backend/data/webui.db")
 con.row_factory = sqlite3.Row
 cur = con.cursor()
 
-existing = cur.execute("select id from model where id = ?", (model_id,)).fetchone()
+existing = cur.execute("select id, params from model where id = ?", (model_id,)).fetchone()
 if existing:
+    # Keep the source model deterministic. The public instance receives this
+    # model record verbatim, so both entry points use the same sampling setting.
+    try:
+        params = json.loads(existing["params"] or "{}")
+    except json.JSONDecodeError:
+        params = {}
+    if params.get("temperature") != 0:
+        params["temperature"] = 0
+        cur.execute(
+            "update model set params = ?, updated_at = ? where id = ?",
+            (json.dumps(params, ensure_ascii=False), int(time.time()), model_id),
+        )
+        con.commit()
+        print(f"Updated source model temperature: {model_id}")
     print(f"Source model already exists: {model_id}")
     raise SystemExit(0)
 

@@ -335,7 +335,9 @@ for resource_type, resource_id in (("knowledge", knowledge_id), ("model", model_
     )
 
 params = json.loads(model["params"] or "{}")
-params["temperature"] = 0
+
+# Keep the exact source-model parameters so admin and public requests follow
+# the same deterministic sampling settings.
 
 meta = json.loads(model["meta"] or "{}")
 meta["description"] = "公开访客专用：只根据需求文档知识库回答"
@@ -379,6 +381,22 @@ dst_cur.execute(
         1,
     ),
 )
+
+# RAG retrieval configuration is stored in Open WebUI's config table rather
+# than in the vector database. Mirror it so equal questions retrieve the same
+# context on both instances.
+try:
+    rag_rows = src_cur.execute(
+        "select key, value from config where key = 'rag' or key like 'rag.%'"
+    ).fetchall()
+    for row in rag_rows:
+        dst_cur.execute(
+            "insert or replace into config (key, value) values (?, ?)",
+            (row["key"], row["value"]),
+        )
+    print(f"Synchronized RAG configuration entries: {len(rag_rows)}")
+except Exception as e:
+    print(f"Warning: Failed to synchronize RAG configuration: {e}")
 
 dst.commit()
 print("Imported public model:", model_id)
