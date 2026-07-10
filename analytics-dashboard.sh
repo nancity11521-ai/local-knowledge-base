@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
 "${SCRIPT_DIR}/question-analytics.sh" >/dev/null
+"${SCRIPT_DIR}/access-analytics.sh" >/dev/null
 
 OUT_DIR="${SCRIPT_DIR}/analytics"
 JSON_FILE="${OUT_DIR}/question-analytics.json"

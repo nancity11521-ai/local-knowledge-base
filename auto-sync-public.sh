@@ -15,5 +15,6 @@ echo
 
 while true; do
   "${SCRIPT_DIR}/sync-public-once-if-needed.sh" || true
+  "${SCRIPT_DIR}/analytics-dashboard.sh" || echo "Analytics refresh failed; will retry on the next cycle." >&2
   sleep "${INTERVAL_SECONDS}"
 done

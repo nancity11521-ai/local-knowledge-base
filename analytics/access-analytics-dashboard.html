@@ -32,14 +32,19 @@
     </div>
   </main>
   <script>
-    const base=`${location.protocol}//${location.hostname}:3002`;
-    fetch(base+'/analytics/stats').then(r=>r.json()).then(data=>{
-      const today=new Date().toLocaleDateString('en-CA');const current=data.days.find(x=>x.day===today)||{};
-      visits.textContent=current.visits||0;visitors.textContent=current.visitors||0;consultations.textContent=current.consultations||0;
-      days.innerHTML=data.days.map(x=>`<tr><td>${x.day}</td><td>${x.visits}</td><td>${x.visitors}</td><td>${x.consultations}</td></tr>`).join('')||'<tr><td colspan="4">暂无数据</td></tr>';
-      const total=data.languages.reduce((n,x)=>n+x.count,0)||1;
-      languages.innerHTML=data.languages.map(x=>`<tr><td>${x.language}</td><td>${x.count}</td><td><div class="bar" style="width:${Math.max(4,x.count/total*100)}%"></div></td></tr>`).join('')||'<tr><td colspan="3">暂无数据</td></tr>';
-    }).catch(()=>{document.querySelector('main').innerHTML='<div class="error">访问统计服务暂未启动，请重启公共服务。</div>'});
+    const ymd=()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`};
+    async function load(){
+      try{
+        const r=await fetch(`/static/analytics/access-analytics.json?_=${Date.now()}`,{cache:'no-store'});
+        if(!r.ok)throw new Error('stats unavailable');
+        const data=await r.json();const current=data.days.find(x=>x.day===ymd())||{};
+        visits.textContent=current.visits||0;visitors.textContent=current.visitors||0;consultations.textContent=current.consultations||0;
+        days.innerHTML=data.days.map(x=>`<tr><td>${x.day}</td><td>${x.visits}</td><td>${x.visitors}</td><td>${x.consultations}</td></tr>`).join('')||'<tr><td colspan="4">暂无数据</td></tr>';
+        const total=data.languages.reduce((n,x)=>n+x.count,0)||1;
+        languages.innerHTML=data.languages.map(x=>`<tr><td>${x.language}</td><td>${x.count}</td><td><div class="bar" style="width:${Math.max(4,x.count/total*100)}%"></div></td></tr>`).join('')||'<tr><td colspan="3">暂无数据</td></tr>';
+      }catch(_){document.querySelector('main').innerHTML='<div class="error">统计数据尚未生成，请等待一分钟后刷新。</div>'}
+    }
+    load();setInterval(load,60000);
   </script>
 </body>
 </html>
