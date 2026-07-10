@@ -57,6 +57,10 @@ set_public_env_value "DEFAULT_PINNED_MODELS" ""
 set_public_env_value "MODEL_FILTER_LIST" ""
 set_public_env_value "ENABLE_CUSTOM_MODEL_FALLBACK" "False"
 
+API_SYNC_OUTPUT="$("${SCRIPT_DIR}/sync-public-api-config.sh")"
+printf '%s\n' "${API_SYNC_OUTPUT}"
+API_CONFIG_CHANGED="$(printf '%s\n' "${API_SYNC_OUTPUT}" | awk -F= '/^PUBLIC_API_CONFIG_CHANGED=/{print $2}' | tail -n1)"
+
 PUBLIC_WEBUI_PORT_VALUE="$(grep -E '^PUBLIC_WEBUI_PORT=' .env.public | tail -n 1 | cut -d '=' -f 2- || true)"
 PUBLIC_WEBUI_PORT_VALUE="${PUBLIC_WEBUI_PORT_VALUE:-3001}"
 
@@ -64,7 +68,12 @@ PUBLIC_WEBUI_PORT_VALUE="${PUBLIC_WEBUI_PORT_VALUE:-3001}"
 
 echo
 echo "Checking the public model and knowledge-base sync..."
-"${SCRIPT_DIR}/sync-public-once-if-needed.sh"
+if [ "${API_CONFIG_CHANGED}" = "1" ]; then
+  echo "API settings changed; rebuilding the public model chain..."
+  "${SCRIPT_DIR}/sync-public-requirement-model.sh"
+else
+  "${SCRIPT_DIR}/sync-public-once-if-needed.sh"
+fi
 
 "${SCRIPT_DIR}/inject-public-assets.sh"
 
