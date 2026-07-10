@@ -36,7 +36,9 @@ services:
       - BYPASS_MODEL_ACCESS_CONTROL=True
       - ENABLE_OLLAMA_API=false
       - USE_OLLAMA_DOCKER=false
-      - ENABLE_CUSTOM_MODEL_FALLBACK=True
+      # The visitor selects a custom knowledge-base model. It must not be
+      # resolved as a provider/base model, or Open WebUI returns "Model not found".
+      - ENABLE_CUSTOM_MODEL_FALLBACK=False
     volumes:
       - open-webui-public-data:/app/backend/data
       - ./seed-docs:/seed-docs:ro
