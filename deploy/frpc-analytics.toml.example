@@ -1,0 +1,9 @@
+# Add this block to ~/local-knowledge-base/frpc.toml on Ubuntu.
+# The Aliyun FRP server must allow remote port 12702.
+
+[[proxies]]
+name = "kb-analytics"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 3002
+remotePort = 12702

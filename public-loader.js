@@ -171,7 +171,10 @@
   }
 
   function analyticsBase() {
-    return `${location.protocol}//${location.hostname}:${window.PUBLIC_ANALYTICS_PORT || 3002}`;
+    // Public analytics is exposed by the public site's Nginx route. Keeping
+    // this same-origin avoids browser failures when the internal 3002 port is
+    // intentionally not exposed to the internet.
+    return `${location.origin}/analytics-api`;
   }
 
   function logVisit() {
