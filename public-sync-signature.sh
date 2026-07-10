@@ -12,7 +12,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
 }
 
 TARGET="${1:-main}"
-KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-需求文档}"
+KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 MODEL_ID="${MODEL_ID:-requirement-docs-kb}"
 
 case "${TARGET}" in

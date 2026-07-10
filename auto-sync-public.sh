@@ -10,7 +10,7 @@ echo "Auto public sync started."
 echo "Interval: ${INTERVAL_SECONDS}s"
 echo "Main: ${MAIN_CONTAINER:-local-knowledge-base}"
 echo "Public: ${PUBLIC_CONTAINER:-local-knowledge-base-public}"
-echo "Knowledge: ${KNOWLEDGE_NAME:-需求文档}"
+echo "Knowledge: ${KNOWLEDGE_NAME:-g3问题库}"
 echo
 
 while true; do
