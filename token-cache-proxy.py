@@ -142,6 +142,10 @@ def enforce_response_language(raw):
     if not rule:
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
+    # The source custom model is synchronized from the administrator instance
+    # and owns all knowledge-base rules. This proxy adds only the selected
+    # response language; adding a second set of knowledge rules here would
+    # make public and administrator answers use different prompts.
     messages[:] = [
         message for message in messages
         if not (
@@ -150,25 +154,17 @@ def enforce_response_language(raw):
             and "PUBLIC_LANGUAGE_ENFORCEMENT:" in str(message.get("content", ""))
         )
     ]
-    messages.insert(0, {
-        "role": "system",
-        "content": (
-            f"PUBLIC_LANGUAGE_ENFORCEMENT:{language}\n{rule}\n"
-            "Follow this language requirement even if the user's question or retrieved knowledge-base text uses another language.\n"
-            "Answer only from retrieved knowledge-base context. Do not use general model knowledge, assumptions, internet knowledge, "
-            "or invented product specifications. If the retrieved context does not explicitly contain the requested answer, say that "
-            "no relevant information was found in the knowledge base."
-        ),
-    })
-    for message in reversed(messages):
-        if isinstance(message, dict) and message.get("role") == "user" and isinstance(message.get("content"), str):
-            message["content"] = (
-                f"{message['content'].rstrip()}\n\n"
-                f"Mandatory output requirement: {rule} "
-                "Translate any relevant source information into the required response language before answering. "
-                "Use only retrieved knowledge-base context and never invent missing product parameters."
-            )
-            break
+    has_language_rule = any(
+        isinstance(message, dict)
+        and message.get("role") == "system"
+        and "RESPONSE_LANGUAGE:" in str(message.get("content", ""))
+        for message in messages
+    )
+    if not has_language_rule:
+        messages.insert(0, {
+            "role": "system",
+            "content": f"PUBLIC_LANGUAGE_ENFORCEMENT:{language}\n{rule}",
+        })
     payload["messages"] = messages
     payload["public_response_language"] = language
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -271,14 +267,17 @@ class Handler(BaseHTTPRequestHandler):
             except sqlite3.Error as exc:
                 print(f"Cache read skipped: {exc}", flush=True)
 
+        import ssl
+        ssl_context = ssl._create_unverified_context()
         url = UPSTREAM_BASE_URL + self.path.replace("/v1", "", 1) if self.path.startswith("/v1") else urljoin(UPSTREAM_BASE_URL + "/", self.path.lstrip("/"))
         headers = {k: v for k, v in self.headers.items() if k.lower() not in {"host", "content-length", "connection"}}
+        headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         if UPSTREAM_API_KEY:
             headers["Authorization"] = "Bearer " + UPSTREAM_API_KEY
         request = urllib.request.Request(url, data=raw if self.command != "GET" else None, headers=headers, method=self.command)
 
         try:
-            with urllib.request.urlopen(request, timeout=300) as response:
+            with urllib.request.urlopen(request, timeout=300, context=ssl_context) as response:
                 body = response.read()
                 status = response.status
                 response_headers = dict(response.headers.items())
