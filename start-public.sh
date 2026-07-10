@@ -35,6 +35,28 @@ if [ ! -f .env.public ]; then
   echo "Created .env.public from .env.public.example."
 fi
 
+# The public UI always sends the custom knowledge-base model explicitly. Do not
+# use that custom ID as Open WebUI's server-side fallback model: newer Open
+# WebUI versions resolve the fallback as a base model and otherwise return
+# "Model not found". The loader hides all base models from visitors instead.
+set_public_env_value() {
+  local key="$1"
+  local value="$2"
+  local tmp_file
+  tmp_file="$(mktemp)"
+  awk -v key="${key}" -v value="${value}" '
+    $0 ~ "^" key "=" { print key "=" value; found = 1; next }
+    { print }
+    END { if (!found) print key "=" value }
+  ' .env.public > "${tmp_file}"
+  mv "${tmp_file}" .env.public
+}
+
+set_public_env_value "DEFAULT_MODELS" ""
+set_public_env_value "DEFAULT_PINNED_MODELS" ""
+set_public_env_value "MODEL_FILTER_LIST" ""
+set_public_env_value "ENABLE_CUSTOM_MODEL_FALLBACK" "False"
+
 PUBLIC_WEBUI_PORT_VALUE="$(grep -E '^PUBLIC_WEBUI_PORT=' .env.public | tail -n 1 | cut -d '=' -f 2- || true)"
 PUBLIC_WEBUI_PORT_VALUE="${PUBLIC_WEBUI_PORT_VALUE:-3001}"
 
