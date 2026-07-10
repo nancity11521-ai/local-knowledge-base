@@ -40,9 +40,11 @@ PUBLIC_WEBUI_PORT_VALUE="${PUBLIC_WEBUI_PORT_VALUE:-3001}"
 
 "${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d
 
-"${SCRIPT_DIR}/inject-public-assets.sh"
+echo
+echo "Checking the public model and knowledge-base sync..."
+"${SCRIPT_DIR}/sync-public-once-if-needed.sh"
 
-"${SCRIPT_DIR}/cleanup-public-chats.sh" || true
+"${SCRIPT_DIR}/inject-public-assets.sh"
 
 echo
 echo "Public guest knowledge base is starting:"
