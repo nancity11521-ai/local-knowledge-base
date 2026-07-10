@@ -3,16 +3,9 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260707-2';
-  const PUBLIC_KB_VERSION = '20260707-rag-sync-7';
+  const PUBLIC_STYLE_VERSION = '20260710-1';
+  const PUBLIC_KB_VERSION = '20260710-live-binding';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
-  const PUBLIC_KNOWLEDGE_FALLBACK = [
-    { type: 'collection', id: 'e1341cb3-a334-460e-8756-1b65e42f4351', name: 'g3问题库' },
-    { type: 'file', id: 'd68dc2b4-3b4c-47ef-ae0c-eaac648da3f9', name: 'K17（intel Ultra 5 226V）产品规格书 20260306 (1).pdf' },
-    { type: 'file', id: '3e20f6c2-608f-4ce6-8903-beb5d3a7c88f', name: 'G3 Pro（intel i3-10110U）产品规格书（MINI PC）20260120 (1).pdf' },
-    { type: 'file', id: 'fae7f0ba-f203-4559-b492-9a9ad07bd0a5', name: '双风扇系列设备风扇异响排查 - 副本.docx' },
-    { type: 'file', id: 'b56ffbd7-9249-4adb-86e9-c0ae3af769d5', name: '设备开机卡在 LOGO 画面_无法进入系统排查指南 - 副本.docx' }
-  ];
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
   const LANGUAGES = [
     { code: 'zh-CN', label: '中文', name: 'Chinese', nativeRule: '请只使用中文回答。', dir: 'ltr' },
@@ -247,7 +240,10 @@
 
   function publicKnowledgeItems() {
     const dynamic = Array.isArray(window.__PUBLIC_MODEL_KNOWLEDGE__) ? window.__PUBLIC_MODEL_KNOWLEDGE__ : [];
-    return dynamic.length ? dynamic : PUBLIC_KNOWLEDGE_FALLBACK;
+    // Knowledge IDs are generated per Open WebUI database. Never use a
+    // hard-coded fallback here: it can override the current public model
+    // binding with IDs from a different machine or an older deployment.
+    return dynamic;
   }
 
   function mergePublicKnowledgeFiles(files) {
@@ -301,7 +297,9 @@
     payload.public_response_language = getLanguage();
     payload.public_kb_version = PUBLIC_KB_VERSION;
     payload.model = PUBLIC_MODEL_ID;
-    payload.files = mergePublicKnowledgeFiles(payload.files);
+    // The server-side custom model owns the knowledge binding. Only attach
+    // runtime knowledge items when they were obtained from this server.
+    payload.files = mergePublicKnowledgeFiles([]);
     payload.features = { ...(payload.features || {}), web_search: false };
     if (Array.isArray(payload.models)) payload.models = [PUBLIC_MODEL_ID];
     payload.metadata = {
