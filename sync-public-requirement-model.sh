@@ -18,6 +18,8 @@ KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 export DOCKER_BIN
 export MAIN_CONTAINER
 
+"${SCRIPT_DIR}/ensure-requirement-model.sh"
+
 # Auto-sync API keys and base URL from the main .env to .env.public on sync to prevent empty/stale placeholders
 python3 - <<'EOF_ENV'
 import os
@@ -139,6 +141,10 @@ echo "Exporting main instance database snapshot..."
 "${DOCKER_BIN}" cp "${MAIN_CONTAINER}:/app/backend/data/webui.db" "${TMP_DIR}/main-webui.db"
 
 echo "Analyzing model links and upload files..."
+if [ -f .env.public ]; then
+  export OPENAI_API_KEY="$(grep -E "^OPENAI_API_KEY=" .env.public | head -n1 | cut -d'=' -f2- | tr -d '"'\')"
+  export OPENAI_API_BASE_URL="$(grep -E "^OPENAI_API_BASE_URL=" .env.public | head -n1 | cut -d'=' -f2- | tr -d '"'\')"
+fi
 python3 - "${TMP_DIR}/main-webui.db" "${TMP_DIR}/uploads-list.txt" "${MODEL_ID}" "${KNOWLEDGE_NAME}" <<'PY'
 import sqlite3
 import sys
@@ -575,7 +581,7 @@ if public_user_row:
 CHROMA_PY
 
 echo "Restarting public instance with fresh configuration..."
-"${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d --force-recreate open-webui-public
+"${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d --force-recreate
 "${SCRIPT_DIR}/inject-public-assets.sh"
 
 echo
