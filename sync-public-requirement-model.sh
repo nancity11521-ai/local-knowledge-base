@@ -55,32 +55,15 @@ model = cur.execute("select * from model where id = ?", (model_id,)).fetchone()
 if not model:
     raise SystemExit(f"Model not found: {model_id}")
 
-meta = json.loads(model["meta"] or "{}")
-knowledge_list = meta.get("knowledge", [])
+public_knowledge = cur.execute("select id from knowledge where name = ?", (knowledge_name,)).fetchone()
+if not public_knowledge:
+    raise SystemExit(f"Public knowledge collection not found: {knowledge_name}")
 
-collection_ids = []
+# The visitor instance must only receive this designated public collection.
+# Do not inherit older or directly attached model files, which could expose
+# documents from a private collection.
+collection_ids = [public_knowledge["id"]]
 file_ids = []
-explicit_collection_ids = []
-explicit_file_ids = []
-
-for item in knowledge_list:
-    if isinstance(item, dict):
-        if item.get("type") == "collection":
-            explicit_collection_ids.append(item.get("id"))
-        elif item.get("type") == "file":
-            explicit_file_ids.append(item.get("id"))
-
-collection_ids = [item for item in explicit_collection_ids if item]
-file_ids = [item for item in explicit_file_ids if item]
-
-# Fallback only when the model has no explicit knowledge binding. This avoids
-# leaking stale default collections while keeping an empty model usable.
-if not collection_ids and not file_ids:
-    named_knowledge = cur.execute("select id from knowledge where name = ?", (knowledge_name,)).fetchone()
-    if named_knowledge:
-        collection_ids.append(named_knowledge["id"])
-
-# Include files from explicitly bound collections plus any direct file bindings.
 for col_id in collection_ids:
     k_files = cur.execute("select file_id from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
     for kf in k_files:
@@ -159,30 +142,15 @@ model = src_cur.execute("select * from model where id = ?", (model_id,)).fetchon
 if not model:
     raise SystemExit(f"Source model '{model_id}' not found")
 
-meta = json.loads(model["meta"] or "{}")
-knowledge_list = meta.get("knowledge", [])
+public_knowledge = src_cur.execute("select id, name from knowledge where name = ?", (knowledge_name,)).fetchone()
+if not public_knowledge:
+    raise SystemExit(f"Public knowledge collection not found: {knowledge_name}")
 
-collection_ids = []
-file_ids = []
-explicit_collection_ids = []
+# Always rebuild the visitor model from the designated public collection.
+# This prevents a stale admin-model binding from silently excluding new files.
+collection_ids = [public_knowledge["id"]]
 explicit_file_ids = []
-
-for item in knowledge_list:
-    if isinstance(item, dict):
-        if item.get("type") == "collection":
-            explicit_collection_ids.append(item.get("id"))
-        elif item.get("type") == "file":
-            explicit_file_ids.append(item.get("id"))
-
-collection_ids = [item for item in explicit_collection_ids if item]
-file_ids = [item for item in explicit_file_ids if item]
-
-if not collection_ids and not file_ids:
-    named_knowledge = src_cur.execute("select id, name from knowledge where name = ?", (knowledge_name,)).fetchone()
-    if named_knowledge:
-        collection_ids.append(named_knowledge["id"])
-
-# Include files from explicitly bound collections plus any direct file bindings.
+file_ids = []
 for col_id in collection_ids:
     k_files = src_cur.execute("select file_id from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
     for kf in k_files:
