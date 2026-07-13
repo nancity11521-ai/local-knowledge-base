@@ -328,7 +328,10 @@ model_meta["capabilities"] = {
     "terminal": False,
     "citations": False,
     "status_updates": True,
-    "builtin_tools": False,
+    # Keep knowledge-base tools enabled so the public model follows the same
+    # retrieval path as the administrator model. Other public-only limits
+    # above still keep web search, terminal, uploads, and code execution off.
+    "builtin_tools": True,
 }
 for knowledge_item in model_meta.get("knowledge", []):
     knowledge_item["user_id"] = public_user_id
