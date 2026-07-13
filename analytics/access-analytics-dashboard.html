@@ -33,9 +33,13 @@
   </main>
   <script>
     const ymd=()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`};
+    const liveStatsUrl = location.hostname === 'qa-admin.gmktec.cn'
+      ? 'https://qa.gmktec.cn/analytics-api/analytics/stats'
+      : `${location.origin}/analytics-api/analytics/stats`;
     async function load(){
       try{
-        const r=await fetch(`/static/analytics/access-analytics.json?_=${Date.now()}`,{cache:'no-store'});
+        let r=await fetch(liveStatsUrl,{cache:'no-store'});
+        if(!r.ok) r=await fetch(`/static/analytics/access-analytics.json?_=${Date.now()}`,{cache:'no-store'});
         if(!r.ok)throw new Error('stats unavailable');
         const data=await r.json();const current=data.days.find(x=>x.day===ymd())||{};
         visits.textContent=current.visits||0;visitors.textContent=current.visitors||0;consultations.textContent=current.consultations||0;
