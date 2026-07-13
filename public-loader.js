@@ -181,7 +181,6 @@
     const day = new Date().toISOString().slice(0, 10);
     const key = `public_visit_logged_${day}`;
     if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, '1');
     let sessionId = localStorage.getItem('public_visitor_id');
     if (!sessionId) {
       sessionId = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
@@ -193,6 +192,8 @@
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ session_id: sessionId, language: getLanguage() }),
       keepalive: true
+    }).then((response) => {
+      if (response.ok) sessionStorage.setItem(key, '1');
     }).catch(() => {});
   }
 
