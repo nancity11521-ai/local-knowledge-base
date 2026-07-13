@@ -340,14 +340,12 @@ for knowledge_item in model_meta.get("knowledge", []):
     }
 
 import os, urllib.request
-# Auto-detect the actual base model available through the proxy.
-# The proxy forwards model IDs from the upstream API (e.g. "deepseek-v4-flash"),
-# which may differ from the OPENAI_MODEL env var (e.g. "deepseek-chat").
-# We query the proxy directly to get the real model ID that Open WebUI will see
-# in its MODELS state, ensuring base_model_id always matches.
+# The public assistant must use the exact same base model as the administrator
+# assistant. Never silently substitute the first model returned by the proxy:
+# that produces plausible but different answers.
 _proxy_url = os.environ.get("OPENAI_API_BASE_URL", "http://token-cache-proxy:8000/v1")
 _proxy_key = os.environ.get("OPENAI_API_KEY", "")
-base_model_id = model["base_model_id"]  # fallback to source value
+base_model_id = model["base_model_id"]
 try:
     _req = urllib.request.Request(_proxy_url.rstrip("/") + "/models")
     if _proxy_key:
@@ -355,17 +353,17 @@ try:
     _resp = urllib.request.urlopen(_req, timeout=5)
     _data = json.loads(_resp.read())
     _available = [m.get("id") for m in _data.get("data", []) if m.get("id")]
-    if _available:
-        # Prefer the source model's base_model_id if it exists in the proxy list
-        if model["base_model_id"] in _available:
-            base_model_id = model["base_model_id"]
-        else:
-            base_model_id = _available[0]
-        print(f"Detected proxy models: {_available}, using base_model_id: {base_model_id}")
-    else:
-        print(f"Warning: proxy returned empty model list, using fallback: {base_model_id}")
+    if _available and base_model_id not in _available:
+        raise SystemExit(
+            "Public proxy does not expose the administrator base model "
+            f"'{base_model_id}'. Available models: {_available}. "
+            "Refusing to substitute a different model because answers would diverge."
+        )
+    print(f"Verified public proxy base model: {base_model_id}")
 except Exception as _e:
-    print(f"Warning: could not query proxy for models ({_e}), using fallback: {base_model_id}")
+    if isinstance(_e, SystemExit):
+        raise
+    print(f"Warning: could not verify proxy models ({_e}); preserving source base model: {base_model_id}")
 
 dst_cur.execute(
     """
