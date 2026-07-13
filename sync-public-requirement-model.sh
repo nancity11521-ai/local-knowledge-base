@@ -13,6 +13,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
 
 MAIN_CONTAINER="${MAIN_CONTAINER:-local-knowledge-base}"
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
+CACHE_CONTAINER="${CACHE_CONTAINER:-local-knowledge-base-token-cache}"
 MODEL_ID="requirement-docs-kb"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 export DOCKER_BIN
@@ -460,6 +461,18 @@ if public_user_row:
         except Exception as e:
             print(f"Skipped updating collection {col.name}: {e}")
 CHROMA_PY
+
+echo "Clearing stale public answer cache while preserving analytics..."
+"${DOCKER_BIN}" exec -i "${CACHE_CONTAINER}" python3 - <<'PY'
+import os
+import sqlite3
+
+db_path = os.environ.get("CACHE_DB", "/cache/token-cache.sqlite3")
+con = sqlite3.connect(db_path)
+con.execute("delete from cache")
+con.commit()
+con.close()
+PY
 
 echo "Restarting public instance with fresh configuration..."
 "${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d --force-recreate
