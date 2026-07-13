@@ -11,7 +11,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
   exit 1
 }
 
-CONTAINER="${ANALYTICS_CONTAINER:-local-knowledge-base-public}"
+CONTAINER="${ANALYTICS_CONTAINER:-local-knowledge-base-token-cache}"
 OUT_DIR="${SCRIPT_DIR}/analytics"
 mkdir -p "${OUT_DIR}"
 
@@ -99,31 +99,24 @@ def detect_language(text):
         return "English"
     return "其他"
 
-con = sqlite3.connect("/app/backend/data/webui.db")
+con = sqlite3.connect("/cache/token-cache.sqlite3")
 con.row_factory = sqlite3.Row
 cur = con.cursor()
 
 cur.execute(
     """
     create table if not exists public_question_log (
-        message_id text primary key,
-        chat_id text,
-        title text,
         question text,
-        model_id text,
-        created_at integer
+        language text,
+        created_at integer not null
     )
     """
 )
 
 messages = cur.execute(
     """
-    select cm.id as message_id, cm.chat_id, cm.content, cm.model_id, cm.created_at, c.title
-    from chat_message cm
-    left join chat c on c.id = cm.chat_id
-    where cm.role = 'user'
-    union
-    select message_id, chat_id, question as content, model_id, created_at, title
+    select '' as message_id, '' as chat_id, question as content, '' as model_id,
+           created_at, '公开访客' as title, language
     from public_question_log
     order by created_at
     """
@@ -146,7 +139,7 @@ for row in messages:
     hour_counter[dt] += 1
     models = extract_models(text)
     question_type = classify_type(text)
-    language = detect_language(text)
+    language = row["language"] or detect_language(text)
     type_counter[question_type] += 1
     language_counter[language] += 1
     for model in models:

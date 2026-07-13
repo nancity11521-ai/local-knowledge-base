@@ -66,6 +66,16 @@ def db():
         )
         """
     )
+    con.execute(
+        """
+        create table if not exists public_question_log (
+            id integer primary key autoincrement,
+            question text not null,
+            language text,
+            created_at integer not null
+        )
+        """
+    )
     return con
 
 def access_stats():
@@ -113,6 +123,32 @@ def normalize_payload(raw):
         return raw
     payload.pop("stream_options", None)
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+def question_from_payload(raw):
+    try:
+        payload = json.loads(raw)
+    except Exception:
+        return ""
+
+    questions = []
+
+    def visit(value):
+        if not isinstance(value, dict):
+            return
+        messages = value.get("messages")
+        if isinstance(messages, list):
+            for message in messages:
+                if not isinstance(message, dict) or message.get("role") != "user":
+                    continue
+                content = message.get("content")
+                if isinstance(content, str) and content.strip():
+                    questions.append(content.strip())
+        for key, child in value.items():
+            if key != "messages" and isinstance(child, dict):
+                visit(child)
+
+    visit(payload)
+    return questions[-1][:2000] if questions else ""
 
 def cache_key(path, raw):
     semantic = normalize_payload(raw)
@@ -247,12 +283,18 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 payload = json.loads(raw)
                 language = payload.get("public_response_language")
+                question = question_from_payload(raw)
                 with DB_LOCK:
                     with db() as con:
                         con.execute(
                             "insert into access_log(event, language, created_at) values ('consultation', ?, ?)",
                             (str(language or "其他")[:32], int(time.time())),
                         )
+                        if question:
+                            con.execute(
+                                "insert into public_question_log(question, language, created_at) values (?, ?, ?)",
+                                (question, str(language or "其他")[:32], int(time.time())),
+                            )
             except Exception:
                 pass
         key = cache_key(self.path, raw)
