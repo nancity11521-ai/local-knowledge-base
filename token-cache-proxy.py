@@ -129,18 +129,21 @@ def enforce_response_language(raw):
         return raw
 
     language = payload.get("public_response_language") or payload.get("language")
-    for message in messages:
+    last_user_index = max(
+        (index for index, message in enumerate(messages)
+         if isinstance(message, dict) and message.get("role") == "user"),
+        default=None,
+    )
+    for index, message in enumerate(messages):
         content = message.get("content") if isinstance(message, dict) else None
         if not isinstance(content, str):
             continue
-        match = LANGUAGE_MARKER.search(content)
-        if match:
-            language = match.group(1)
+        matches = list(LANGUAGE_MARKER.finditer(content))
+        # A marker belongs only to the most recent user question. Historical
+        # markers must never alter a later Chinese request.
+        if matches and index == last_user_index:
+            language = matches[-1].group(1)
         message["content"] = LANGUAGE_MARKER.sub("", content)
-
-    rule = LANGUAGE_RULES.get(language)
-    if not rule:
-        return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
     # The source custom model is synchronized from the administrator instance
     # and owns all knowledge-base rules. This proxy adds only the selected
@@ -154,6 +157,16 @@ def enforce_response_language(raw):
             and "PUBLIC_LANGUAGE_ENFORCEMENT:" in str(message.get("content", ""))
         )
     ]
+
+    # Chinese is the administrator model's source language. Keep its request
+    # byte-for-byte free of public language instructions so both instances use
+    # the same prompt and retrieval path.
+    rule = LANGUAGE_RULES.get(language)
+    if language in (None, "zh-CN") or not rule:
+        payload.pop("public_response_language", None)
+        payload["messages"] = messages
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
     has_language_rule = any(
         isinstance(message, dict)
         and message.get("role") == "system"

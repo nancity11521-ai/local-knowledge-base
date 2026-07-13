@@ -4,7 +4,7 @@
 
   const STORAGE_KEY = 'public_kb_language';
   const PUBLIC_STYLE_VERSION = '20260711-1';
-  const PUBLIC_KB_VERSION = '20260710-live-binding';
+  const PUBLIC_KB_VERSION = '20260713-answer-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
   const LANGUAGES = [
@@ -265,9 +265,10 @@
   }
 
   function applyLanguageInstruction(payload) {
+    const requiresTranslation = getLanguage() !== 'zh-CN';
     const instruction = answerInstruction();
     function updateMessages(container, key) {
-      if (!Array.isArray(container?.[key])) return;
+      if (!requiresTranslation || !Array.isArray(container?.[key])) return;
       container[key] = container[key].filter(
         (message) => !(message?.role === 'system' && /RESPONSE_LANGUAGE:|Answer strictly in/.test(String(message?.content || '')))
       );
@@ -288,7 +289,7 @@
     }
 
     visit(payload);
-    if (typeof payload.prompt === 'string') {
+    if (requiresTranslation && typeof payload.prompt === 'string') {
       payload.prompt = `${instruction}\n\n${payload.prompt.replace(/^RESPONSE_LANGUAGE:.*\n\n/s, '')}`;
     }
     payload.language = getLanguage();

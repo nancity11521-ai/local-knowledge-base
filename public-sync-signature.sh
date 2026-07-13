@@ -61,18 +61,23 @@ rows = cur.execute(
     (knowledge_name,),
 ).fetchall()
 
+config_columns = {row[1] for row in cur.execute("pragma table_info(config)")}
+if {"key", "value"}.issubset(config_columns):
+    rag_config = [
+        {"key": row["key"], "value": row["value"]}
+        for row in cur.execute(
+            "select key, value from config where key = 'rag' or key like 'rag.%' order by key"
+        ).fetchall()
+    ]
+else:
+    rag_config = None
+
 payload_obj = {
     "model": dict(model) if model else None,
     "knowledge": dict(knowledge) if knowledge else None,
     "files": [dict(row) for row in rows],
+    "rag_config": rag_config,
 }
-if payload_obj["model"] and payload_obj["model"].get("params"):
-    try:
-        params = json.loads(payload_obj["model"]["params"])
-        params.pop("temperature", None)
-        payload_obj["model"]["params"] = json.dumps(params, ensure_ascii=False, sort_keys=True)
-    except Exception:
-        pass
 payload = json.dumps(payload_obj, ensure_ascii=False, sort_keys=True)
 print(hashlib.sha256(payload.encode("utf-8")).hexdigest())
 print(len(rows))
