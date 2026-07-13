@@ -241,6 +241,51 @@ src_cur = src.cursor()
 dst_cur = dst.cursor()
 now = int(time.time())
 
+def sync_rag_config():
+    src_columns = {row[1] for row in src_cur.execute("pragma table_info(config)")}
+    dst_columns = {row[1] for row in dst_cur.execute("pragma table_info(config)")}
+    if not src_columns or not dst_columns:
+        print("No persistent RAG config table found; using container defaults.")
+        return
+
+    if {"key", "value"}.issubset(src_columns) and {"key", "value"}.issubset(dst_columns):
+        rows = src_cur.execute(
+            "select key, value from config where key like 'rag.%' order by key"
+        ).fetchall()
+        dst_cur.execute("delete from config where key like 'rag.%'")
+        for row in rows:
+            if "updated_at" in dst_columns:
+                dst_cur.execute(
+                    "insert or replace into config (key, value, updated_at) values (?, ?, ?)",
+                    (row["key"], row["value"], now),
+                )
+            else:
+                dst_cur.execute(
+                    "insert or replace into config (key, value) values (?, ?)",
+                    (row["key"], row["value"]),
+                )
+        print("Synced RAG config entries:", len(rows))
+        return
+
+    if "data" in src_columns and "data" in dst_columns:
+        source = src_cur.execute("select data from config limit 1").fetchone()
+        target = dst_cur.execute("select rowid, data from config limit 1").fetchone()
+        if not source or not target:
+            return
+        source_data = json.loads(source["data"] or "{}")
+        target_data = json.loads(target["data"] or "{}")
+        target_data.update({
+            key: value for key, value in source_data.items()
+            if key.upper().startswith("RAG_")
+        })
+        dst_cur.execute(
+            "update config set data = ? where rowid = ?",
+            (json.dumps(target_data, ensure_ascii=False), target["rowid"]),
+        )
+        print("Synced RAG config from legacy config storage.")
+
+sync_rag_config()
+
 dst_cur.execute("update user set role = 'user', updated_at = ?", (now,))
 public_user = dst_cur.execute("select id, name, email, role from user limit 1").fetchone()
 if not public_user:
@@ -443,6 +488,74 @@ CHROMA_PY
 
 echo "Restarting public instance..."
 "${DOCKER_BIN}" restart "${PUBLIC_CONTAINER}" >/dev/null
+
+echo "Rebuilding public RAG vectors from the synced public documents..."
+"${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" python - "${KNOWLEDGE_NAME}" <<'PY'
+import json
+import sqlite3
+import sys
+import time
+import urllib.error
+import urllib.request
+
+knowledge_name = sys.argv[1]
+con = sqlite3.connect("/app/backend/data/webui.db")
+con.row_factory = sqlite3.Row
+rows = con.execute(
+    """
+    select f.id, f.data
+    from file f
+    join knowledge_file kf on kf.file_id = f.id
+    join knowledge k on k.id = kf.knowledge_id
+    where k.name = ?
+    order by f.id
+    """,
+    (knowledge_name,),
+).fetchall()
+if not rows:
+    raise SystemExit(f"No public files found for knowledge: {knowledge_name}")
+
+for row in rows:
+    data = json.loads(row["data"] or "{}")
+    content = data.get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise SystemExit(f"Cannot rebuild vectors: file {row['id']} has no extracted text")
+    request = urllib.request.Request(
+        f"http://127.0.0.1:8080/api/v1/files/{row['id']}/data/content/update",
+        data=json.dumps({"content": content}, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    for attempt in range(60):
+        try:
+            with urllib.request.urlopen(request, timeout=600) as response:
+                if response.status != 200:
+                    raise SystemExit(f"Vector rebuild failed for {row['id']}: HTTP {response.status}")
+            break
+        except urllib.error.HTTPError as exc:
+            raise SystemExit(f"Vector rebuild failed for {row['id']}: HTTP {exc.code} {exc.read().decode('utf-8', 'replace')}")
+        except urllib.error.URLError:
+            if attempt == 59:
+                raise SystemExit("Public Open WebUI did not become ready for vector rebuilding")
+            time.sleep(1)
+    for attempt in range(600):
+        try:
+            with urllib.request.urlopen(
+                f"http://127.0.0.1:8080/api/v1/files/{row['id']}/process/status",
+                timeout=30,
+            ) as response:
+                status = json.loads(response.read() or b"{}").get("status")
+        except urllib.error.URLError as exc:
+            raise SystemExit(f"Could not verify vector rebuild for {row['id']}: {exc}")
+        if status == "completed":
+            break
+        if status == "failed":
+            raise SystemExit(f"Vector rebuild failed for {row['id']}")
+        if attempt == 599:
+            raise SystemExit(f"Timed out rebuilding vectors for {row['id']}")
+        time.sleep(1)
+    print("Rebuilt vectors for:", row["id"])
+PY
 
 cleanup_public_chats
 
