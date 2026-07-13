@@ -19,6 +19,27 @@ timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
 echo "[${timestamp}] Checking uploads..."
 echo "[${timestamp}] Safe mode: only files already linked to the public knowledge are synced."
 
+echo "Setting the administrator model temperature to 0 for deterministic parity..."
+"${DOCKER_BIN}" exec -i "${MAIN_CONTAINER}" python - "${MODEL_ID}" <<'PY'
+import json
+import sqlite3
+import sys
+
+model_id = sys.argv[1]
+con = sqlite3.connect("/app/backend/data/webui.db")
+row = con.execute("select params from model where id = ?", (model_id,)).fetchone()
+if not row:
+    raise SystemExit(f"Model not found: {model_id}")
+params = json.loads(row[0] or "{}")
+params["temperature"] = 0
+con.execute(
+    "update model set params = ? where id = ?",
+    (json.dumps(params, ensure_ascii=False), model_id),
+)
+con.commit()
+con.close()
+PY
+
 cleanup_public_chats() {
   local retention_seconds="${PUBLIC_CHAT_RETENTION_SECONDS:-60}"
   "${DOCKER_BIN}" exec -i "${PUBLIC_CONTAINER}" python - "${retention_seconds}" <<'PY'
