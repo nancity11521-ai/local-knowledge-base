@@ -478,7 +478,7 @@ con.close()
 PY
 
 echo "Restarting public instance with fresh configuration..."
-"${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d --force-recreate
+"${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d --force-recreate open-webui-public
 "${SCRIPT_DIR}/inject-public-assets.sh"
 
 echo

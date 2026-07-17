@@ -29,17 +29,17 @@ html = f"""<!doctype html>
   <meta http-equiv="cache-control" content="no-store">
   <title>问题分析后台</title>
   <script>
-    (async function () {
-      try {
-        const response = await fetch('/api/v1/auths/', { credentials: 'same-origin' });
+    (async function () {{
+      try {{
+        const response = await fetch('/api/v1/auths/', {{ credentials: 'same-origin' }});
         const user = response.ok ? await response.json() : null;
-        if (user?.role !== 'admin') {
+        if (user?.role !== 'admin') {{
           location.replace('/auth?redirect=' + encodeURIComponent(location.pathname));
-        }
-      } catch (_) {
+        }}
+      }} catch (_) {{
         location.replace('/auth?redirect=' + encodeURIComponent(location.pathname));
-      }
-    })();
+      }}
+    }})();
   </script>
   <style>
     :root {{
