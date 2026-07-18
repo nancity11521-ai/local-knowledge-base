@@ -12,7 +12,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
 }
 
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
-PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260707-2}"
+PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260718-1}"
 
 if ! "${DOCKER_BIN}" ps --format '{{.Names}}' | grep -qx "${PUBLIC_CONTAINER}"; then
   echo "Public container is not running: ${PUBLIC_CONTAINER}"

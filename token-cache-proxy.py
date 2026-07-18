@@ -190,7 +190,10 @@ def enforce_response_language(raw):
         if not (
             isinstance(message, dict)
             and message.get("role") == "system"
-            and "PUBLIC_LANGUAGE_ENFORCEMENT:" in str(message.get("content", ""))
+            and (
+                "PUBLIC_LANGUAGE_ENFORCEMENT:" in str(message.get("content", ""))
+                or str(message.get("content", "")).lstrip().startswith("RESPONSE_LANGUAGE:")
+            )
         )
     ]
 
@@ -203,14 +206,17 @@ def enforce_response_language(raw):
         payload["messages"] = messages
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
-    has_language_rule = any(
-        isinstance(message, dict)
-        and message.get("role") == "system"
-        and "RESPONSE_LANGUAGE:" in str(message.get("content", ""))
-        for message in messages
+    # Insert this after the synchronized model prompt and immediately before
+    # the newest user question. It is then the final system instruction seen
+    # by the model, rather than a browser-only hint that a model prompt can
+    # override.
+    last_user_index = max(
+        (index for index, message in enumerate(messages)
+         if isinstance(message, dict) and message.get("role") == "user"),
+        default=None,
     )
-    if not has_language_rule:
-        messages.insert(0, {
+    if last_user_index is not None:
+        messages.insert(last_user_index, {
             "role": "system",
             "content": f"PUBLIC_LANGUAGE_ENFORCEMENT:{language}\n{rule}",
         })

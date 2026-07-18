@@ -36,6 +36,10 @@ services:
       - BYPASS_MODEL_ACCESS_CONTROL=True
       - ENABLE_OLLAMA_API=false
       - USE_OLLAMA_DOCKER=false
+      # WEBUI_AUTH=False uses one guest backend user. Enforce disposable chats
+      # server-side so one visitor can never read another visitor's question.
+      - USER_PERMISSIONS_CHAT_TEMPORARY=True
+      - USER_PERMISSIONS_CHAT_TEMPORARY_ENFORCED=True
       # The visitor selects a custom knowledge-base model. It must not be
       # resolved as a provider/base model, or Open WebUI returns "Model not found".
       - ENABLE_CUSTOM_MODEL_FALLBACK=False
