@@ -403,6 +403,29 @@ try:
 except Exception as e:
     print(f"Warning: Failed to force-update config: {e}")
 
+# WEBUI_AUTH=False maps every visitor to the same guest backend user. Enforce
+# temporary chats in the persistent Open WebUI configuration as well as in the
+# container environment; otherwise an older `user.permissions` record can
+# override the environment default and expose one visitor's chat to another.
+try:
+    row = dst_cur.execute("select value from config where key = 'user.permissions'").fetchone()
+    permissions = json.loads(row["value"]) if row and row["value"] else {}
+    if not isinstance(permissions, dict):
+        permissions = {}
+    chat_permissions = permissions.get("chat")
+    if not isinstance(chat_permissions, dict):
+        chat_permissions = {}
+        permissions["chat"] = chat_permissions
+    chat_permissions["temporary"] = True
+    chat_permissions["temporary_enforced"] = True
+    dst_cur.execute(
+        "insert or replace into config (key, value) values ('user.permissions', ?)",
+        (json.dumps(permissions, ensure_ascii=False),),
+    )
+    print("Enforced temporary chats for the public guest user.")
+except Exception as e:
+    print(f"Warning: Failed to enforce public temporary chats: {e}")
+
 # Retrieval settings are instance-level in Open WebUI. Copying only the vector
 # database is not sufficient: different RAG thresholds or top-k values can
 # retrieve different passages for the same question.
