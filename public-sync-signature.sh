@@ -72,11 +72,38 @@ if {"key", "value"}.issubset(config_columns):
 else:
     rag_config = None
 
+def normalized_json(value):
+    """Compare JSON-backed database fields by content, not serialized formatting."""
+    if not isinstance(value, str):
+        return value
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return value
+
+def normalize_fields(record, fields):
+    if record is None:
+        return None
+    result = dict(record)
+    for field in fields:
+        result[field] = normalized_json(result.get(field))
+    return result
+
+normalized_rag_config = None
+if rag_config is not None:
+    normalized_rag_config = [
+        {"key": item["key"], "value": normalized_json(item["value"])}
+        for item in rag_config
+    ]
+
 payload_obj = {
-    "model": dict(model) if model else None,
-    "knowledge": dict(knowledge) if knowledge else None,
-    "files": [dict(row) for row in rows],
-    "rag_config": rag_config,
+    # The sync script deserializes and reserializes these JSON columns. Their
+    # whitespace/key order can therefore differ while the actual configuration
+    # is identical. Hash their parsed value to prevent an endless re-sync loop.
+    "model": normalize_fields(model, ("params",)),
+    "knowledge": normalize_fields(knowledge, ("meta", "data")),
+    "files": [normalize_fields(row, ("meta", "data")) for row in rows],
+    "rag_config": normalized_rag_config,
 }
 payload = json.dumps(payload_obj, ensure_ascii=False, sort_keys=True)
 print(hashlib.sha256(payload.encode("utf-8")).hexdigest())
