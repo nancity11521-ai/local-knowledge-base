@@ -779,6 +779,9 @@
       ['Open WebUI', text.title],
       ['新对话', text.newChat],
       ['New Chat', text.newChat],
+      // Open WebUI renders this same assistant name in the home view, sidebar,
+      // and response header. Keep all three in the visitor-selected language.
+      ['客服智能问答', text.model],
       ['需求文档', text.model],
       ['智能问答', text.model],
       ['Smart Q&A', text.model],
