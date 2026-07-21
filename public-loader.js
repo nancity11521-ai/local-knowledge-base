@@ -4,7 +4,7 @@
 
   const STORAGE_KEY = 'public_kb_language';
   const PUBLIC_STYLE_VERSION = '20260711-1';
-  const PUBLIC_KB_VERSION = '20260713-answer-parity';
+  const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
   const LANGUAGES = [
@@ -297,9 +297,16 @@
     payload.public_response_language = getLanguage();
     payload.public_kb_version = PUBLIC_KB_VERSION;
     payload.model = PUBLIC_MODEL_ID;
-    // The server-side custom model owns the knowledge binding. Only attach
-    // runtime knowledge items when they were obtained from this server.
-    payload.files = mergePublicKnowledgeFiles([]);
+    // The server-side custom model owns the knowledge binding. Open WebUI
+    // treats an explicit empty `files` array as an instruction to use no
+    // knowledge at all, so never send one before the real model metadata has
+    // been loaded. When it is available, forward that exact server binding.
+    const knowledge = publicKnowledgeItems();
+    if (knowledge.length) {
+      payload.files = mergePublicKnowledgeFiles([]);
+    } else {
+      delete payload.files;
+    }
     payload.features = { ...(payload.features || {}), web_search: false };
     if (Array.isArray(payload.models)) payload.models = [PUBLIC_MODEL_ID];
     payload.metadata = {

@@ -16,6 +16,7 @@ PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 CACHE_CONTAINER="${CACHE_CONTAINER:-local-knowledge-base-token-cache}"
 MODEL_ID="requirement-docs-kb"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
+PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260721-retrieval-parity-1}"
 export DOCKER_BIN
 export MAIN_CONTAINER
 
@@ -113,14 +114,14 @@ echo "Syncing vector database (embeddings)..."
 PUBLIC_OPENAI_API_KEY=$(grep -E "^OPENAI_API_KEY=" .env.public | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
 PUBLIC_OPENAI_API_BASE_URL=$(grep -E "^OPENAI_API_BASE_URL=" .env.public | head -n1 | cut -d'=' -f2- | tr -d '"'\') || true
 
-"${DOCKER_BIN}" exec -e OPENAI_API_KEY="${PUBLIC_OPENAI_API_KEY}" -e OPENAI_API_BASE_URL="${PUBLIC_OPENAI_API_BASE_URL}" -i "${PUBLIC_CONTAINER}" python3 - "${MODEL_ID}" "${KNOWLEDGE_NAME}" <<'PY'
+"${DOCKER_BIN}" exec -e OPENAI_API_KEY="${PUBLIC_OPENAI_API_KEY}" -e OPENAI_API_BASE_URL="${PUBLIC_OPENAI_API_BASE_URL}" -i "${PUBLIC_CONTAINER}" python3 - "${MODEL_ID}" "${KNOWLEDGE_NAME}" "${PUBLIC_SYNC_FORMAT_VERSION}" <<'PY'
 import json
 import sqlite3
 import sys
 import time
 import uuid
 
-model_id, knowledge_name = sys.argv[1:3]
+model_id, knowledge_name, sync_format_version = sys.argv[1:4]
 
 src = sqlite3.connect("/tmp/main-webui.db")
 src.row_factory = sqlite3.Row
@@ -318,21 +319,23 @@ for fid in direct_file_ids:
         "itemId": str(uuid.uuid4()),
     })
 model_meta["knowledge"] = rebuilt_knowledge
-model_meta["capabilities"] = {
-    "file_context": True,
-    "vision": False,
+# Retrieval capabilities must come from the administrator model unchanged.
+# In particular, forcing builtin_tools=true only on the public copy can switch
+# it from the administrator's RAG path to a different tool path. That makes a
+# document appear available in the administrator chat but unavailable publicly.
+# Keep the public-only safety restrictions, but never invent a retrieval mode.
+source_capabilities = model_meta.get("capabilities")
+if not isinstance(source_capabilities, dict):
+    source_capabilities = {}
+model_meta["capabilities"] = dict(source_capabilities)
+model_meta["capabilities"]["file_context"] = True
+model_meta["capabilities"].update({
     "file_upload": False,
     "web_search": False,
     "image_generation": False,
     "code_interpreter": False,
     "terminal": False,
-    "citations": False,
-    "status_updates": True,
-    # Keep knowledge-base tools enabled so the public model follows the same
-    # retrieval path as the administrator model. Other public-only limits
-    # above still keep web search, terminal, uploads, and code execution off.
-    "builtin_tools": True,
-}
+})
 for knowledge_item in model_meta.get("knowledge", []):
     knowledge_item["user_id"] = public_user_id
     knowledge_item["write_access"] = False
@@ -402,6 +405,14 @@ try:
     print("Forced public OpenAI API connection settings update in database.")
 except Exception as e:
     print(f"Warning: Failed to force-update config: {e}")
+
+# Records the synchronization implementation that produced this public copy.
+# public-sync-signature.sh uses it to apply future code-only retrieval fixes
+# once automatically, without requiring an operator to run a manual sync.
+dst_cur.execute(
+    "insert or replace into config (key, value) values ('public.sync_format_version', ?)",
+    (sync_format_version,),
+)
 
 # WEBUI_AUTH=False maps every visitor to the same guest backend user. Enforce
 # temporary chats in the persistent Open WebUI configuration as well as in the

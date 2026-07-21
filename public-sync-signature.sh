@@ -14,6 +14,9 @@ DOCKER_BIN="$(find_docker_bin)" || {
 TARGET="${1:-main}"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 MODEL_ID="${MODEL_ID:-requirement-docs-kb}"
+# Bump when the synchronization implementation changes in a way that requires
+# one fresh public-model import even if no document changed.
+PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260721-retrieval-parity-1}"
 
 case "${TARGET}" in
   main)
@@ -28,13 +31,13 @@ case "${TARGET}" in
     ;;
 esac
 
-"${DOCKER_BIN}" exec -i "${CONTAINER}" python - "${KNOWLEDGE_NAME}" "${MODEL_ID}" <<'PY'
+"${DOCKER_BIN}" exec -i "${CONTAINER}" python - "${TARGET}" "${PUBLIC_SYNC_FORMAT_VERSION}" "${KNOWLEDGE_NAME}" "${MODEL_ID}" <<'PY'
 import hashlib
 import json
 import sqlite3
 import sys
 
-knowledge_name, model_id = sys.argv[1:3]
+target, expected_format_version, knowledge_name, model_id = sys.argv[1:5]
 con = sqlite3.connect("/app/backend/data/webui.db")
 con.row_factory = sqlite3.Row
 cur = con.cursor()
@@ -72,6 +75,14 @@ if {"key", "value"}.issubset(config_columns):
 else:
     rag_config = None
 
+if {"key", "value"}.issubset(config_columns):
+    row = cur.execute(
+        "select value from config where key = 'public.sync_format_version'"
+    ).fetchone()
+    public_format_version = row["value"] if row else ""
+else:
+    public_format_version = ""
+
 def normalized_json(value):
     """Compare JSON-backed database fields by content, not serialized formatting."""
     if not isinstance(value, str):
@@ -104,6 +115,10 @@ payload_obj = {
     "knowledge": normalize_fields(knowledge, ("meta", "data")),
     "files": [normalize_fields(row, ("meta", "data")) for row in rows],
     "rag_config": normalized_rag_config,
+    # Main carries the format expected by this checkout; public carries the
+    # format that was last imported. A code-only retrieval fix therefore
+    # triggers exactly one safe sync on the next automatic cycle.
+    "sync_format_version": expected_format_version if target == "main" else public_format_version,
 }
 payload = json.dumps(payload_obj, ensure_ascii=False, sort_keys=True)
 print(hashlib.sha256(payload.encode("utf-8")).hexdigest())

@@ -12,7 +12,9 @@ DOCKER_BIN="$(find_docker_bin)" || {
 }
 
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
-PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260719-1}"
+# Bump this whenever the public loader behavior changes so visitor browsers
+# cannot keep an older request/retrieval policy in their HTTP cache.
+PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260721-2}"
 
 if ! "${DOCKER_BIN}" ps --format '{{.Names}}' | grep -qx "${PUBLIC_CONTAINER}"; then
   echo "Public container is not running: ${PUBLIC_CONTAINER}"
