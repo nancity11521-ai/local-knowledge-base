@@ -3,6 +3,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
+source "${SCRIPT_DIR}/docker-bin.sh"
+source "${SCRIPT_DIR}/public-container.sh"
+
+DOCKER_BIN="$(find_docker_bin)" || exit 1
+PUBLIC_CONTAINER="$(ensure_public_container)" || exit 1
+export DOCKER_BIN PUBLIC_CONTAINER
 
 timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
 echo "[${timestamp}] Checking uploads..."

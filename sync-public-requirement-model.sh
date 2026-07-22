@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 source "${SCRIPT_DIR}/docker-bin.sh"
+source "${SCRIPT_DIR}/public-container.sh"
 
 DOCKER_BIN="$(find_docker_bin)" || {
   echo "Docker CLI was not found."
@@ -16,9 +17,23 @@ PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 CACHE_CONTAINER="${CACHE_CONTAINER:-local-knowledge-base-token-cache}"
 MODEL_ID="requirement-docs-kb"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
-PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260721-retrieval-parity-1}"
+PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260722-container-safe-1}"
 export DOCKER_BIN
 export MAIN_CONTAINER
+
+SYNC_LOCK_DIR="${SCRIPT_DIR}/.public-sync.lock"
+if ! mkdir "${SYNC_LOCK_DIR}" 2>/dev/null; then
+  echo "A public synchronization is already running; skipping this overlapping run."
+  exit 0
+fi
+trap 'rmdir "${SYNC_LOCK_DIR}" 2>/dev/null || true' EXIT INT TERM
+
+# Use a container ID when Compose generated a project-prefixed runtime name.
+# This prevents a concurrent Compose reconciliation from making the sync lose
+# its target half way through database and vector copies.
+PUBLIC_CONTAINER="$(ensure_public_container)" || exit 1
+export PUBLIC_CONTAINER
+echo "Using public container: ${PUBLIC_CONTAINER}"
 
 "${SCRIPT_DIR}/ensure-requirement-model.sh"
 "${SCRIPT_DIR}/sync-public-api-config.sh"
@@ -512,7 +527,7 @@ con.close()
 PY
 
 echo "Restarting public instance with fresh configuration..."
-"${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml up -d --force-recreate open-webui-public
+"${DOCKER_BIN}" restart "${PUBLIC_CONTAINER}"
 "${SCRIPT_DIR}/inject-public-assets.sh"
 
 echo

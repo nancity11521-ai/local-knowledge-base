@@ -16,7 +16,7 @@ PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 # cannot keep an older request/retrieval policy in their HTTP cache.
 PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260721-2}"
 
-if ! "${DOCKER_BIN}" ps --format '{{.Names}}' | grep -qx "${PUBLIC_CONTAINER}"; then
+if ! "${DOCKER_BIN}" inspect -f '{{.State.Running}}' "${PUBLIC_CONTAINER}" 2>/dev/null | grep -qx true; then
   echo "Public container is not running: ${PUBLIC_CONTAINER}"
   exit 1
 fi

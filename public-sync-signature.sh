@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 source "${SCRIPT_DIR}/docker-bin.sh"
+source "${SCRIPT_DIR}/public-container.sh"
 
 DOCKER_BIN="$(find_docker_bin)" || {
   echo "Docker CLI was not found." >&2
@@ -16,14 +17,17 @@ KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 MODEL_ID="${MODEL_ID:-requirement-docs-kb}"
 # Bump when the synchronization implementation changes in a way that requires
 # one fresh public-model import even if no document changed.
-PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260721-retrieval-parity-1}"
+PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260722-container-safe-1}"
 
 case "${TARGET}" in
   main)
     CONTAINER="${MAIN_CONTAINER:-local-knowledge-base}"
     ;;
   public)
-    CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
+    CONTAINER="$(resolve_public_container)" || {
+      echo "Public container is not available." >&2
+      exit 1
+    }
     ;;
   *)
     echo "Usage: $0 main|public" >&2
