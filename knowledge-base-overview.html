@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="GMKtec 本地 AI 客服知识库系统介绍">
+  <title>GMKtec AI 客服知识库｜系统介绍</title>
+  <style>
+    :root { --ink:#17212b; --muted:#62707c; --line:#e5e9ed; --bg:#f5f7f6; --brand:#167366; --brand-dark:#0f544b; --mint:#e9f5f1; --card:#fff; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif; line-height:1.65; }
+    a { color:inherit; }
+    .wrap { width:min(1120px, calc(100% - 40px)); margin:auto; }
+    .hero { color:#fff; padding:78px 0 72px; background:radial-gradient(circle at 86% 18%, #2d9d85 0, transparent 27%), linear-gradient(125deg,#0c3838,#126154 53%,#167366); overflow:hidden; }
+    .brand { display:flex; align-items:center; gap:13px; font-size:14px; color:#d8f0ea; letter-spacing:.06em; }
+    .brand img { width:46px; height:46px; border-radius:50%; background:#fff; padding:6px; object-fit:contain; }
+    h1 { max-width:760px; margin:24px 0 15px; font-size:clamp(34px,6vw,58px); line-height:1.16; letter-spacing:-.045em; }
+    .hero p { max-width:690px; margin:0; font-size:18px; color:#d8eae6; }
+    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:30px; }
+    .button { display:inline-flex; align-items:center; gap:8px; padding:11px 17px; border-radius:9px; text-decoration:none; font-weight:700; background:#fff; color:var(--brand-dark); }
+    .button.ghost { color:#fff; background:transparent; border:1px solid rgba(255,255,255,.45); }
+    main { padding:28px 0 72px; }
+    section { margin-top:20px; padding:30px; border:1px solid var(--line); border-radius:16px; background:var(--card); box-shadow:0 3px 14px rgba(25,42,48,.035); }
+    h2 { margin:0 0 8px; font-size:25px; letter-spacing:-.025em; }
+    h3 { margin:0 0 7px; font-size:17px; }
+    .lead { margin:0; color:var(--muted); }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:20px; }
+    .feature { min-height:168px; padding:20px; border:1px solid var(--line); border-radius:12px; background:#fff; }
+    .icon { width:36px; height:36px; display:grid; place-items:center; margin-bottom:12px; border-radius:9px; color:var(--brand-dark); background:var(--mint); font-size:19px; }
+    .feature p, .step p { margin:0; color:var(--muted); font-size:14px; }
+    .architecture { display:grid; grid-template-columns:1fr 34px 1fr 34px 1fr; gap:0; align-items:stretch; margin-top:23px; }
+    .node { padding:20px; border-radius:13px; background:#f7fbfa; border:1px solid #d7ebe6; }
+    .node strong { display:block; color:var(--brand-dark); font-size:17px; }
+    .node span { display:block; margin-top:7px; color:var(--muted); font-size:13px; }
+    .arrow { display:grid; place-items:center; color:#62a99d; font-size:23px; }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .steps { display:grid; gap:10px; margin-top:18px; }
+    .step { display:grid; grid-template-columns:36px 1fr; gap:12px; align-items:start; padding:14px 0; border-bottom:1px solid var(--line); }
+    .step:last-child { border:0; padding-bottom:0; }
+    .number { width:29px; height:29px; display:grid; place-items:center; border-radius:50%; background:var(--brand); color:#fff; font-size:13px; font-weight:700; }
+    .note { margin-top:18px; padding:14px 16px; border-left:4px solid var(--brand); border-radius:0 8px 8px 0; background:var(--mint); color:#28564f; font-size:14px; }
+    .table { width:100%; margin-top:18px; border-collapse:collapse; font-size:14px; }
+    .table th, .table td { padding:13px 12px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); }
+    .table th { width:24%; color:var(--brand-dark); background:#f7fbfa; }
+    .badge { display:inline-block; margin:3px 5px 3px 0; padding:3px 9px; border-radius:99px; background:#edf2f1; color:#4e6161; font-size:12px; }
+    footer { padding:26px 0 50px; color:#748080; text-align:center; font-size:13px; }
+    @media (max-width:760px) { .hero { padding:50px 0; } .grid, .two { grid-template-columns:1fr; } .architecture { grid-template-columns:1fr; gap:10px; } .arrow { transform:rotate(90deg); height:20px; } section { padding:22px; } .table th { width:34%; } }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="brand"><img src="assets/gmktec-logo.png" alt="GMKtec">GMKtec 本地 AI 知识库</div>
+      <h1>让产品资料成为<br>随时可用的智能客服</h1>
+      <p>面向 GMKtec 产品与售后场景的私有化知识库系统。管理员集中维护资料，外部访客无需登录即可获得基于指定公开资料的多语言问答服务。</p>
+      <div class="actions">
+        <a class="button" href="https://qa.gmktec.cn/" target="_blank" rel="noopener">进入公开问答</a>
+        <a class="button ghost" href="https://qa-admin.gmktec.cn/" target="_blank" rel="noopener">进入管理后台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <h2>系统定位</h2>
+      <p class="lead">本系统将产品规格书、安装指南、常见故障处理、售后政策等资料组织为可检索知识库，结合兼容 OpenAI 格式的大模型 API，为客户和团队提供有依据、可持续维护的智能问答。</p>
+      <div class="grid">
+        <article class="feature"><div class="icon">⌕</div><h3>资料驱动回答</h3><p>模型优先检索指定知识库内容，再生成答案，适用于规格查询、驱动安装、故障排查与使用指导。</p></article>
+        <article class="feature"><div class="icon">◎</div><h3>公开与私有隔离</h3><p>公开端仅同步指定公开知识库；内部资料、敏感文件及管理员配置不会暴露给外部访客。</p></article>
+        <article class="feature"><div class="icon">文</div><h3>多语言服务</h3><p>支持中文、英文、日文、韩文、西班牙文、法文、德文和阿拉伯文，界面与回答可按访客语言切换。</p></article>
+      </div>
+    </section>
+
+    <section>
+      <h2>整体架构</h2>
+      <p class="lead">管理、公开问答与访问统计独立运行，通过安全的反向代理与 FRP 通道对外提供服务。</p>
+      <div class="architecture">
+        <div class="node"><strong>管理员后台</strong><span>上传资料、管理知识库、配置模型、查看问题分析与访问统计。</span><span>qa-admin.gmktec.cn · 3000</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><strong>公开问答端</strong><span>外部客户免登录访问，只能使用指定公开模型和公开知识库。</span><span>qa.gmktec.cn · 3001</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><strong>缓存与统计服务</strong><span>复用相同请求的结果，记录访问、咨询量、语言与热门问题。</span><span>/analytics-api/ · 3002</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>完整功能说明</h2>
+      <p class="lead">系统以“管理员维护资料—公开端安全回答—数据反馈改进资料”为主线。以下为当前知识库的全部核心功能。</p>
+      <div class="grid">
+        <article class="feature"><div class="icon">①</div><h3>知识库与文件管理</h3><p>管理员可上传、查看和管理 PDF、Word、Excel、TXT、Markdown 等资料，并将文件绑定到对应知识库。</p></article>
+        <article class="feature"><div class="icon">②</div><h3>公开问答页面</h3><p>客户无需注册或登录即可访问公开页面，直接提交产品咨询、规格查询、安装指导或故障现象。</p></article>
+        <article class="feature"><div class="icon">③</div><h3>限定公开资料范围</h3><p>公开端只读取指定的 <b>g3问题库</b>。内部文件、测试资料和敏感资料不会被同步到外部。</p></article>
+        <article class="feature"><div class="icon">④</div><h3>固定客服模型</h3><p>公开端锁定 <b>requirement-docs-kb</b> 模型，不向访客展示模型选择、后台菜单、搜索、笔记或工作区功能。</p></article>
+        <article class="feature"><div class="icon">⑤</div><h3>多语言界面与回答</h3><p>支持中文、英文、日文、韩文、西班牙文、法文、德文、阿拉伯文；访客选择语言后，界面和回答均按该语言显示。</p></article>
+        <article class="feature"><div class="icon">⑥</div><h3>临时访客对话隔离</h3><p>公开端采用临时对话策略。访客只应看到自己的当前会话，不能浏览、收到通知或查看其他访客的问题。</p></article>
+        <article class="feature"><div class="icon">⑦</div><h3>后台与公开端同步</h3><p>同步公开知识库、绑定文件、原始上传文件、向量库、模型参数、系统提示词和 RAG 检索配置。</p></article>
+        <article class="feature"><div class="icon">⑧</div><h3>回答一致性控制</h3><p>后台模型是公开模型的唯一配置来源；温度、知识库范围和检索参数同步，确保两端事实和结论一致。</p></article>
+        <article class="feature"><div class="icon">⑨</div><h3>Token 缓存</h3><p>相同请求优先返回缓存结果，减少重复调用模型 API 的 Token 消耗；知识或模型更新后自动清理旧答案缓存。</p></article>
+        <article class="feature"><div class="icon">⑩</div><h3>访问统计</h3><p>记录公开页面的访问次数、独立访客、咨询量和咨询语言，供管理员了解服务使用情况。</p></article>
+        <article class="feature"><div class="icon">⑪</div><h3>问题分析后台</h3><p>聚合高频问题、问题分类、型号关键词、语言分布和趋势，帮助发现资料缺口与产品服务问题。</p></article>
+        <article class="feature"><div class="icon">⑫</div><h3>安全运维与恢复</h3><p>管理员、公开端、缓存统计服务独立运行；支持健康检查、日志排查、手动同步与自动同步，降低单点故障影响。</p></article>
+      </div>
+    </section>
+
+    <div class="two">
+      <section>
+        <h2>管理员如何维护资料</h2>
+        <div class="steps">
+          <div class="step"><div class="number">1</div><div><h3>上传与整理</h3><p>在管理后台上传 PDF、Word、Excel、Markdown、TXT 等资料，并检查文件内容与名称。</p></div></div>
+          <div class="step"><div class="number">2</div><div><h3>绑定公开知识库</h3><p>需要面向客户公开的文件，必须绑定到 <b>g3问题库</b>；未绑定的文件不会同步到公开端。</p></div></div>
+          <div class="step"><div class="number">3</div><div><h3>验证回答</h3><p>在后台和公开端使用同一问题测试，确认检索资料、事实结论与回答范围一致。</p></div></div>
+        </div>
+      </section>
+      <section>
+        <h2>客户如何使用</h2>
+        <div class="steps">
+          <div class="step"><div class="number">1</div><div><h3>选择语言</h3><p>在公开页面右上角选择所需语言，系统会按该语言展示界面并生成回答。</p></div></div>
+          <div class="step"><div class="number">2</div><div><h3>描述产品与问题</h3><p>建议包含型号、系统版本、故障现象和已尝试的操作，能提升检索准确度。</p></div></div>
+          <div class="step"><div class="number">3</div><div><h3>获取解决建议</h3><p>系统基于公开资料回答；资料不足时会明确说明，并建议联系官方售后进一步确认。</p></div></div>
+        </div>
+      </section>
+    </div>
+
+    <section>
+      <h2>公开知识库同步原则</h2>
+      <table class="table">
+        <tr><th>唯一来源</th><td>管理员后台的模型配置、系统提示词、知识库绑定与 RAG 检索配置，是公开端同步的唯一来源。</td></tr>
+        <tr><th>同步内容</th><td>公开知识库集合、已绑定文件、上传原件、向量数据库、公开模型配置和检索参数。</td></tr>
+        <tr><th>回答一致性</th><td>相同语言、相同问题下，公开端与后台应基于相同资料得出相同事实与结论；不同语言可能存在翻译表达差异。</td></tr>
+        <tr><th>缓存策略</th><td>相同请求优先命中 Token 缓存，以降低模型调用成本；资料或配置同步后会自动清除旧回答缓存。</td></tr>
+        <tr><th>API 配置同步</th><td>公开模型使用与后台一致的兼容 OpenAI API 配置。管理员更换供应商或 Key 后，应通过同步流程将公开端配置一并更新。</td></tr>
+      </table>
+      <div class="note">公开端为临时访客对话设计。访客问题会用于匿名统计与问题分析，但访客不应看到其他用户的历史对话。</div>
+    </section>
+
+    <section>
+      <h2>管理分析能力</h2>
+      <p class="lead">后台提供数据化视图，帮助团队把客户问题转化为可改进的知识库与产品服务内容。</p>
+      <div class="grid">
+        <article class="feature"><div class="icon">↗</div><h3>访问统计</h3><p>查看访问量、访客数、咨询量及语言分布，了解公开问答的使用趋势。</p></article>
+        <article class="feature"><div class="icon">#</div><h3>问题分析</h3><p>聚合高频问题、问题类型、产品型号与趋势，识别最需要补充的资料。</p></article>
+        <article class="feature"><div class="icon">✓</div><h3>持续改进</h3><p>将高频但未命中的问题补充为标准资料，再绑定公开知识库并同步，形成闭环。</p></article>
+      </div>
+    </section>
+
+    <section>
+      <h2>安全与运维边界</h2>
+      <div class="two">
+        <div>
+          <h3>必须保护的信息</h3>
+          <span class="badge">API Key</span><span class="badge">FRP Token</span><span class="badge">管理员账号</span><span class="badge">私有资料</span>
+          <p class="lead" style="margin-top:12px">以上内容不得写入 Git 仓库，不得同步到公开知识库，也不得出现在公开问答中。</p>
+        </div>
+        <div>
+          <h3>日常检查重点</h3>
+          <p class="lead">确认三个容器运行正常；公开资料已绑定到 g3问题库；公开模型 ID 为 <b>requirement-docs-kb</b>；公开端能访问且统计接口正常返回数据。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>GMKtec 本地 AI 知识库 · 面向产品咨询、售后支持与知识沉淀的智能服务系统</footer>
+</body>
+</html>
