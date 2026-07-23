@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 source "${SCRIPT_DIR}/docker-bin.sh"
+source "${SCRIPT_DIR}/public-container.sh"
 
 DOCKER_BIN="$(find_docker_bin)" || {
   echo "Docker CLI was not found."
@@ -14,9 +15,13 @@ DOCKER_BIN="$(find_docker_bin)" || {
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 # Bump this whenever the public loader behavior changes so visitor browsers
 # cannot keep an older request/retrieval policy in their HTTP cache.
-PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260721-2}"
+PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260723-1}"
 
-if ! "${DOCKER_BIN}" inspect -f '{{.State.Running}}' "${PUBLIC_CONTAINER}" 2>/dev/null | grep -qx true; then
+if ! "${DOCKER_BIN}" inspect "${PUBLIC_CONTAINER}" >/dev/null 2>&1; then
+  PUBLIC_CONTAINER="$(resolve_public_container || true)"
+fi
+
+if [ -z "${PUBLIC_CONTAINER}" ] || ! "${DOCKER_BIN}" inspect -f '{{.State.Running}}' "${PUBLIC_CONTAINER}" 2>/dev/null | grep -qx true; then
   echo "Public container is not running: ${PUBLIC_CONTAINER}"
   exit 1
 fi

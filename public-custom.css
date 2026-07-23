@@ -221,3 +221,13 @@ html[dir="rtl"] .public-suggestion-item {
 .mt-4:has(button[aria-label*="Preguntas de seguimiento"]) {
   display: none !important;
 }
+
+/* The public site uses sources internally for RAG, but never exposes file names
+   or citation cards to visitors. The admin site is not injected with this CSS. */
+#chat-pane [data-citation],
+#chat-pane [data-source],
+#chat-pane [data-reference],
+#chat-pane [class*="citation" i],
+#chat-pane [class*="reference" i] {
+  display: none !important;
+}

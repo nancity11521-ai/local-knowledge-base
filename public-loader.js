@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260711-1';
+  const PUBLIC_STYLE_VERSION = '20260723-hide-sources-1';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -667,6 +667,39 @@
     });
   }
 
+  // Public visitors should receive a clean answer, without exposing internal
+  // document filenames or Open WebUI's citation/source controls.
+  function hidePublicSources() {
+    const sourceLabel = /^(?:\d+\s*)?(?:个\s*)?(?:引用来源|来源|参考资料|Sources?|References?|Citations?|ソース|参照|출처|Fuentes|Quellen|مصادر)$/i;
+    const filename = /^[^<>\n]{1,120}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)$/i;
+    const hide = (node) => {
+      if (node && !node.closest('#public-language-switcher')) {
+        node.style.setProperty('display', 'none', 'important');
+      }
+    };
+
+    document.querySelectorAll('[data-citation], [data-source], [data-reference], [class*="citation" i], [class*="reference" i]').forEach((node) => {
+      hide(node.closest('button, a, [role="button"]') || node);
+    });
+
+    document.querySelectorAll('#chat-pane button, #chat-pane a, #chat-pane [role="button"]').forEach((node) => {
+      const text = (node.textContent || '').trim();
+      const attrs = `${node.getAttribute('aria-label') || ''} ${node.getAttribute('title') || ''}`;
+      if (sourceLabel.test(text) || filename.test(text) || /citation|reference|source/i.test(attrs)) {
+        hide(node);
+      }
+    });
+
+    document.querySelectorAll('#chat-pane span, #chat-pane div').forEach((node) => {
+      if (node.children.length > 0) return;
+      const text = (node.textContent || '').trim();
+      const classes = typeof node.className === 'string' ? node.className : '';
+      if (filename.test(text) && /rounded|text-xs|bg-|badge|chip/i.test(classes)) {
+        hide(node.closest('button, a, [role="button"]') || node);
+      }
+    });
+  }
+
   function hideWelcomeDescription() {
     document.querySelectorAll('div, p, span').forEach((node) => {
       if (node.children.length > 0) return;
@@ -801,6 +834,7 @@
     enableTemporaryChat();
     enhancePublicHome();
     hideFollowUpQuestions();
+    hidePublicSources();
     hideWelcomeDescription();
   }
 
@@ -818,6 +852,7 @@
     let renderQueued = false;
     window.__publicLanguageObserver = new MutationObserver(() => {
       hideFollowUpQuestions();
+      hidePublicSources();
       hideWelcomeDescription();
       if (renderQueued) return;
       renderQueued = true;
