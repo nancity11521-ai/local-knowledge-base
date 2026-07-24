@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-2';
+  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-3';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -680,43 +680,29 @@
         node.style.setProperty('display', 'none', 'important');
       }
     };
+    const root = document.querySelector('body[data-public-mode="true"]') || document.body;
+    if (!root) return;
 
-    document.querySelectorAll('[data-citation], [data-source], [data-reference], [class*="citation" i], [class*="reference" i]').forEach((node) => {
+    root.querySelectorAll('[data-citation], [data-source], [data-reference], [class*="citation" i], [class*="reference" i]').forEach((node) => {
       hide(node.closest('button, a, [role="button"]') || node);
     });
 
-    document.querySelectorAll('#chat-pane button, #chat-pane a, #chat-pane [role="button"]').forEach((node) => {
+    root.querySelectorAll('button, a, [role="button"]').forEach((node) => {
       const text = normalize(node.textContent);
       const attrs = `${node.getAttribute('aria-label') || ''} ${node.getAttribute('title') || ''}`;
-      if (sourceLabel.test(text) || filename.test(text) || /citation|reference|source/i.test(attrs)) {
+      if (sourceLabel.test(text) || filename.test(text) || indexedFilename.test(text) || /citation|reference|source/i.test(attrs)) {
         if (sourceLabel.test(text)) {
-          let wrapper = node;
-          for (let depth = 0; wrapper && depth < 7; depth += 1, wrapper = wrapper.parentElement) {
-            const wrapperText = normalize(wrapper.textContent);
-            const filenames = wrapperText.match(filenameAnywhere) || [];
-            if (filenames.length >= 1 && wrapperText.length <= 5000) {
-              hide(wrapper);
-              break;
-            }
-          }
+          hide(node.parentElement && normalize(node.parentElement.textContent) === text ? node.parentElement : node);
         }
         hide(node);
       }
     });
 
-    document.querySelectorAll('#chat-pane span, #chat-pane div, #chat-pane li, #chat-pane p').forEach((node) => {
+    root.querySelectorAll('span, div, li, p').forEach((node) => {
       const text = normalize(node.textContent);
       if (sourceLabel.test(text)) {
-        let wrapper = node;
-        for (let depth = 0; wrapper && depth < 7; depth += 1, wrapper = wrapper.parentElement) {
-          const wrapperText = normalize(wrapper.textContent);
-          const filenames = wrapperText.match(filenameAnywhere) || [];
-          if (filenames.length >= 1 && wrapperText.length <= 5000) {
-            hide(wrapper);
-            return;
-          }
-        }
-        hide(node);
+        const control = node.closest('button, a, [role="button"]') || node;
+        hide(control.parentElement && normalize(control.parentElement.textContent) === text ? control.parentElement : control);
         return;
       }
       if (node.children.length > 0) return;
@@ -726,6 +712,17 @@
           ? node.parentElement
           : null;
         hide(row || compactParent || node);
+      }
+    });
+
+    // Expanded source lists are rendered as a compact group of numbered
+    // filename buttons. Hide the group even when Open WebUI changes its
+    // surrounding class names.
+    root.querySelectorAll('div').forEach((node) => {
+      const buttons = [...node.children].filter((child) => child.matches?.('button, a, [role="button"]'));
+      if (buttons.length > 0 && buttons.every((button) => indexedFilename.test(normalize(button.textContent)))) {
+        const wrapper = node.parentElement;
+        hide(wrapper && normalize(wrapper.textContent) === normalize(node.textContent) ? wrapper : node);
       }
     });
   }
