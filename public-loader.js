@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260723-hide-sources-1';
+  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-1';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -672,6 +672,7 @@
   function hidePublicSources() {
     const sourceLabel = /^(?:\d+\s*)?(?:个\s*)?(?:引用来源|来源|参考资料|Sources?|References?|Citations?|ソース|参照|출처|Fuentes|Quellen|مصادر)$/i;
     const filename = /^[^<>\n]{1,120}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)$/i;
+    const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,120}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)\s*$/i;
     const hide = (node) => {
       if (node && !node.closest('#public-language-switcher')) {
         node.style.setProperty('display', 'none', 'important');
@@ -686,16 +687,30 @@
       const text = (node.textContent || '').trim();
       const attrs = `${node.getAttribute('aria-label') || ''} ${node.getAttribute('title') || ''}`;
       if (sourceLabel.test(text) || filename.test(text) || /citation|reference|source/i.test(attrs)) {
+        if (sourceLabel.test(text)) {
+          let wrapper = node.parentElement;
+          for (let depth = 0; wrapper && depth < 4; depth += 1, wrapper = wrapper.parentElement) {
+            const filenames = (wrapper.textContent || '').match(/[^<>\n\s]{1,120}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)/gi) || [];
+            if (filenames.length >= 2) {
+              hide(wrapper);
+              break;
+            }
+          }
+        }
         hide(node);
       }
     });
 
-    document.querySelectorAll('#chat-pane span, #chat-pane div').forEach((node) => {
+    document.querySelectorAll('#chat-pane span, #chat-pane div, #chat-pane li, #chat-pane p').forEach((node) => {
       if (node.children.length > 0) return;
       const text = (node.textContent || '').trim();
       const classes = typeof node.className === 'string' ? node.className : '';
-      if (filename.test(text) && /rounded|text-xs|bg-|badge|chip/i.test(classes)) {
-        hide(node.closest('button, a, [role="button"]') || node);
+      if (filename.test(text) || indexedFilename.test(text)) {
+        const row = node.closest('li, [role="listitem"], button, a, [role="button"]');
+        const compactParent = node.parentElement && (node.parentElement.textContent || '').trim().length <= text.length + 8
+          ? node.parentElement
+          : null;
+        hide(row || compactParent || node);
       }
     });
   }
