@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-3';
+  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-4';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -673,10 +673,12 @@
     const sourceLabel = /^(?:\d+\s*)?(?:个\s*)?(?:引用来源|来源|参考资料|Sources?|References?|Citations?|ソース|参照|출처|Fuentes|Quellen|مصادر)$/i;
     const filename = /^[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)$/i;
     const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)\s*$/i;
-    const filenameAnywhere = /[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)/gi;
+    const filenameAnywhere = /[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)/i;
     const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim();
     const hide = (node) => {
       if (node && !node.closest('#public-language-switcher')) {
+        node.dataset.publicSourceHidden = 'true';
+        node.setAttribute('aria-hidden', 'true');
         node.style.setProperty('display', 'none', 'important');
       }
     };
@@ -692,10 +694,25 @@
       const attrs = `${node.getAttribute('aria-label') || ''} ${node.getAttribute('title') || ''}`;
       if (sourceLabel.test(text) || filename.test(text) || indexedFilename.test(text) || /citation|reference|source/i.test(attrs)) {
         if (sourceLabel.test(text)) {
-          hide(node.parentElement && normalize(node.parentElement.textContent) === text ? node.parentElement : node);
+          const header = node.parentElement && normalize(node.parentElement.textContent) === text ? node.parentElement : node;
+          const sourceList = header.nextElementSibling;
+          hide(header);
+          if (sourceList && filenameAnywhere.test(normalize(sourceList.textContent))) {
+            hide(sourceList);
+          }
         }
         hide(node);
       }
+    });
+
+    // Open WebUI labels the expanded footer control through aria-label even
+    // when its visible wording or translation changes. Hide that header and
+    // its adjacent expanded filename list as one unit.
+    root.querySelectorAll('button[aria-expanded][aria-label*="来源"], button[aria-expanded][aria-label*="source" i], button[aria-expanded][aria-label*="reference" i]').forEach((button) => {
+      const header = button.parentElement || button;
+      const sourceList = header.nextElementSibling;
+      hide(header);
+      if (sourceList) hide(sourceList);
     });
 
     root.querySelectorAll('span, div, li, p').forEach((node) => {
