@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-1';
+  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-2';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -671,8 +671,10 @@
   // document filenames or Open WebUI's citation/source controls.
   function hidePublicSources() {
     const sourceLabel = /^(?:\d+\s*)?(?:个\s*)?(?:引用来源|来源|参考资料|Sources?|References?|Citations?|ソース|参照|출처|Fuentes|Quellen|مصادر)$/i;
-    const filename = /^[^<>\n]{1,120}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)$/i;
-    const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,120}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)\s*$/i;
+    const filename = /^[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)$/i;
+    const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)\s*$/i;
+    const filenameAnywhere = /[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)/gi;
+    const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim();
     const hide = (node) => {
       if (node && !node.closest('#public-language-switcher')) {
         node.style.setProperty('display', 'none', 'important');
@@ -684,14 +686,15 @@
     });
 
     document.querySelectorAll('#chat-pane button, #chat-pane a, #chat-pane [role="button"]').forEach((node) => {
-      const text = (node.textContent || '').trim();
+      const text = normalize(node.textContent);
       const attrs = `${node.getAttribute('aria-label') || ''} ${node.getAttribute('title') || ''}`;
       if (sourceLabel.test(text) || filename.test(text) || /citation|reference|source/i.test(attrs)) {
         if (sourceLabel.test(text)) {
-          let wrapper = node.parentElement;
-          for (let depth = 0; wrapper && depth < 4; depth += 1, wrapper = wrapper.parentElement) {
-            const filenames = (wrapper.textContent || '').match(/[^<>\n\s]{1,120}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)/gi) || [];
-            if (filenames.length >= 2) {
+          let wrapper = node;
+          for (let depth = 0; wrapper && depth < 7; depth += 1, wrapper = wrapper.parentElement) {
+            const wrapperText = normalize(wrapper.textContent);
+            const filenames = wrapperText.match(filenameAnywhere) || [];
+            if (filenames.length >= 1 && wrapperText.length <= 5000) {
               hide(wrapper);
               break;
             }
@@ -702,12 +705,24 @@
     });
 
     document.querySelectorAll('#chat-pane span, #chat-pane div, #chat-pane li, #chat-pane p').forEach((node) => {
+      const text = normalize(node.textContent);
+      if (sourceLabel.test(text)) {
+        let wrapper = node;
+        for (let depth = 0; wrapper && depth < 7; depth += 1, wrapper = wrapper.parentElement) {
+          const wrapperText = normalize(wrapper.textContent);
+          const filenames = wrapperText.match(filenameAnywhere) || [];
+          if (filenames.length >= 1 && wrapperText.length <= 5000) {
+            hide(wrapper);
+            return;
+          }
+        }
+        hide(node);
+        return;
+      }
       if (node.children.length > 0) return;
-      const text = (node.textContent || '').trim();
-      const classes = typeof node.className === 'string' ? node.className : '';
       if (filename.test(text) || indexedFilename.test(text)) {
         const row = node.closest('li, [role="listitem"], button, a, [role="button"]');
-        const compactParent = node.parentElement && (node.parentElement.textContent || '').trim().length <= text.length + 8
+        const compactParent = node.parentElement && normalize(node.parentElement.textContent).length <= text.length + 12
           ? node.parentElement
           : null;
         hide(row || compactParent || node);

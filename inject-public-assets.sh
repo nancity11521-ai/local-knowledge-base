@@ -15,7 +15,7 @@ DOCKER_BIN="$(find_docker_bin)" || {
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 # Bump this whenever the public loader behavior changes so visitor browsers
 # cannot keep an older request/retrieval policy in their HTTP cache.
-PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260724-1}"
+PUBLIC_ASSET_VERSION="${PUBLIC_ASSET_VERSION:-20260724-2}"
 
 if ! "${DOCKER_BIN}" inspect "${PUBLIC_CONTAINER}" >/dev/null 2>&1; then
   PUBLIC_CONTAINER="$(resolve_public_container || true)"
