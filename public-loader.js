@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-4';
+  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-5';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -674,7 +674,10 @@
     const filename = /^[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)$/i;
     const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)\s*$/i;
     const filenameAnywhere = /[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)/i;
-    const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim();
+    const normalize = (value) => (value || '')
+      .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     const hide = (node) => {
       if (node && !node.closest('#public-language-switcher')) {
         node.dataset.publicSourceHidden = 'true';
@@ -910,6 +913,12 @@
       childList: true,
       subtree: true
     });
+    // Open WebUI can restore a rendered message subtree without inserting a
+    // new citation node. Re-apply the public-only cleanup after those delayed
+    // renders so citation metadata cannot reappear at the bottom of an answer.
+    if (!window.__publicSourceCleanupTimer) {
+      window.__publicSourceCleanupTimer = window.setInterval(hidePublicSources, 500);
+    }
   }
 
   function keepLanguageInUrl() {
