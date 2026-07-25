@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260724-hide-source-index-5';
+  const PUBLIC_STYLE_VERSION = '20260725-hide-source-index-6';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -145,6 +145,22 @@
     link.rel = 'stylesheet';
     link.href = `/static/custom.css?v=${PUBLIC_STYLE_VERSION}`;
     document.head.appendChild(link);
+    const style = document.createElement('style');
+    style.id = 'public-source-hide-style';
+    style.textContent = `
+      body[data-public-mode="true"] [data-public-source-hidden="true"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        overflow: hidden !important;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   function getLanguage() {
@@ -670,10 +686,11 @@
   // Public visitors should receive a clean answer, without exposing internal
   // document filenames or Open WebUI's citation/source controls.
   function hidePublicSources() {
-    const sourceLabel = /^(?:\d+\s*)?(?:个\s*)?(?:引用来源|来源|参考资料|Sources?|References?|Citations?|ソース|参照|출처|Fuentes|Quellen|مصادر)$/i;
-    const filename = /^[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)$/i;
-    const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)\s*$/i;
-    const filenameAnywhere = /[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|csv|txt|pptx?)/i;
+    const sourceLabel = /^(?:\d+\s*)?(?:个\s*)?(?:引用来源|引用|来源|参考资料|Sources?|References?|Citations?|ソース|参照|출처|Fuentes|Quellen|مصادر)$/i;
+    const citationSummary = /\d{1,3}\s*(?:个|條|条)?\s*(?:引用来源|引用|来源|sources?|references?|citations?)/i;
+    const filename = /^[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|xls|csv|txt|pptx?)$/i;
+    const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|xls|csv|txt|pptx?)\s*$/i;
+    const filenameAnywhere = /[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|xls|csv|txt|pptx?)/i;
     const normalize = (value) => (value || '')
       .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
       .replace(/\s+/g, ' ')
@@ -684,6 +701,19 @@
         node.setAttribute('aria-hidden', 'true');
         node.style.setProperty('display', 'none', 'important');
       }
+    };
+    const hideCompactBlock = (node) => {
+      let target = node;
+      let current = node;
+      for (let depth = 0; depth < 5 && current?.parentElement; depth += 1) {
+        const text = normalize(current.textContent);
+        const parent = current.parentElement;
+        const parentText = normalize(parent.textContent);
+        if (!text || parentText.length > text.length + 260 || parentText.length > 1400) break;
+        target = parent;
+        current = parent;
+      }
+      hide(target);
     };
     const root = document.querySelector('body[data-public-mode="true"]') || document.body;
     if (!root) return;
@@ -732,6 +762,25 @@
           ? node.parentElement
           : null;
         hide(row || compactParent || node);
+      }
+    });
+
+    // Recent Open WebUI builds render the expanded citation footer as plain
+    // nested spans/divs. Hide both the "N 个引用来源" pill and its filename list
+    // without touching the answer text above it.
+    root.querySelectorAll('div, section, ul, ol').forEach((node) => {
+      const text = normalize(node.textContent);
+      if (!text || text.length > 1400) return;
+      const fileMatches = text.match(new RegExp(filenameAnywhere.source, 'gi')) || [];
+      const startsWithCitationHeader = citationSummary.test(text.slice(0, 100)) || sourceLabel.test(text);
+      const hasAnswerContent = !!node.querySelector('p, table, pre, code');
+      const looksLikeSourceList = fileMatches.length >= 2 && /^\s*(?:\d+\s*)?[^<>\n]{1,180}\./m.test(text);
+      if (startsWithCitationHeader && filenameAnywhere.test(text) && !hasAnswerContent) {
+        hideCompactBlock(node);
+        return;
+      }
+      if (looksLikeSourceList && !hasAnswerContent) {
+        hideCompactBlock(node);
       }
     });
 
