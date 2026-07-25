@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260725-hide-source-index-8';
+  const PUBLIC_STYLE_VERSION = '20260725-hide-source-index-9';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -697,11 +697,14 @@
       .replace(/\s+/g, ' ')
       .trim();
     const hide = (node) => {
-      if (node && !node.closest('#public-language-switcher')) {
-        node.dataset.publicSourceHidden = 'true';
-        node.setAttribute('aria-hidden', 'true');
-        node.style.setProperty('display', 'none', 'important');
-      }
+      if (!node || node.closest('#public-language-switcher')) return;
+      // Safety: never hide the chat surface itself or anything containing the
+      // composer. Source footers never contain these, so a hit here means the
+      // climbing logic wandered into the answer or the page shell.
+      if (node.matches?.('#chat-pane, main, body') || node.querySelector?.('#chat-input, #chat-pane')) return;
+      node.dataset.publicSourceHidden = 'true';
+      node.setAttribute('aria-hidden', 'true');
+      node.style.setProperty('display', 'none', 'important');
     };
     const hideCompactBlock = (node) => {
       let target = node;
@@ -710,6 +713,10 @@
         const text = normalize(current.textContent);
         const parent = current.parentElement;
         const parentText = normalize(parent.textContent);
+        // Hard stop: never climb into a container that holds answer content
+        // (paragraphs, tables, code, markdown). Otherwise a short answer would
+        // be hidden together with its citation footer.
+        if (parent.querySelector('p, table, pre, code, .prose, [class*="markdown" i]')) break;
         if (!text || parentText.length > text.length + 260 || parentText.length > 1400) break;
         target = parent;
         current = parent;
@@ -732,7 +739,9 @@
       for (let depth = 0; depth < 5 && current?.parentElement; depth += 1) {
         const parent = current.parentElement;
         const text = normalize(parent.textContent);
-        if (!text || text.length > 1200 || parent.querySelector('table, pre, code')) break;
+        // Stop before swallowing answer content: paragraphs/markdown mean this
+        // ancestor is the message body, not part of the citation cluster.
+        if (!text || text.length > 1200 || parent.querySelector('p, table, pre, code, .prose, [class*="markdown" i]')) break;
         if (citationSummary.test(text.slice(0, 180)) && hasFileReference(text)) {
           hide(parent);
           return;
