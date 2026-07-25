@@ -165,11 +165,6 @@ def enforce_response_language(raw):
         return raw
 
     language = payload.get("public_response_language") or payload.get("language")
-    last_user_index = max(
-        (index for index, message in enumerate(messages)
-         if isinstance(message, dict) and message.get("role") == "user"),
-        default=None,
-    )
 
     # Remove any legacy browser-injected language marker from message contents
     # so the public prompt matches the administrator model exactly.
@@ -209,6 +204,15 @@ def enforce_response_language(raw):
     # stays byte-identical to the administrator model for every language, so the
     # reasoning and retrieval path are the same and only the output language
     # differs between Chinese and other languages.
+    #
+    # Recompute the last user index against the *current* message list. Earlier we
+    # may have dropped legacy system messages, which shifts every index, so an
+    # index captured before that edit would be stale and could raise IndexError.
+    last_user_index = max(
+        (index for index, message in enumerate(messages)
+         if isinstance(message, dict) and message.get("role") == "user"),
+        default=None,
+    )
     if last_user_index is not None:
         user_message = messages[last_user_index]
         user_content = user_message.get("content") if isinstance(user_message, dict) else None
