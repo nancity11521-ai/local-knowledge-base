@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260725-hide-source-index-7';
+  const PUBLIC_STYLE_VERSION = '20260725-hide-source-index-8';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;

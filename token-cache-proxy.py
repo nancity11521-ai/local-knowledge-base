@@ -170,21 +170,18 @@ def enforce_response_language(raw):
          if isinstance(message, dict) and message.get("role") == "user"),
         default=None,
     )
-    for index, message in enumerate(messages):
-        content = message.get("content") if isinstance(message, dict) else None
-        if not isinstance(content, str):
-            continue
-        matches = list(LANGUAGE_MARKER.finditer(content))
-        # A marker belongs only to the most recent user question. Historical
-        # markers must never alter a later Chinese request.
-        if matches and index == last_user_index:
-            language = matches[-1].group(1)
-        message["content"] = LANGUAGE_MARKER.sub("", content)
 
-    # The source custom model is synchronized from the administrator instance
-    # and owns all knowledge-base rules. This proxy adds only the selected
-    # response language; adding a second set of knowledge rules here would
-    # make public and administrator answers use different prompts.
+    # Remove any legacy browser-injected language marker from message contents
+    # so the public prompt matches the administrator model exactly.
+    for message in messages:
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, str):
+            message["content"] = LANGUAGE_MARKER.sub("", content)
+
+    # Drop any language-enforcement system message. Historically the proxy added
+    # a separate system instruction here, but that made the public system prompt
+    # differ from the administrator model and let Chinese and English answers
+    # diverge. We now attach the language requirement to the user turn instead.
     messages[:] = [
         message for message in messages
         if not (
@@ -197,29 +194,29 @@ def enforce_response_language(raw):
         )
     ]
 
+    rule = LANGUAGE_RULES.get(language)
+
     # Chinese is the administrator model's source language. Keep its request
     # byte-for-byte free of public language instructions so both instances use
     # the same prompt and retrieval path.
-    rule = LANGUAGE_RULES.get(language)
     if language in (None, "zh-CN") or not rule:
         payload.pop("public_response_language", None)
         payload["messages"] = messages
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
-    # Insert this after the synchronized model prompt and immediately before
-    # the newest user question. It is then the final system instruction seen
-    # by the model, rather than a browser-only hint that a model prompt can
-    # override.
-    last_user_index = max(
-        (index for index, message in enumerate(messages)
-         if isinstance(message, dict) and message.get("role") == "user"),
-        default=None,
-    )
+    # Parity-preserving enforcement: append the language requirement to the last
+    # user message instead of inserting a system message. The system prompt then
+    # stays byte-identical to the administrator model for every language, so the
+    # reasoning and retrieval path are the same and only the output language
+    # differs between Chinese and other languages.
     if last_user_index is not None:
-        messages.insert(last_user_index, {
-            "role": "system",
-            "content": f"PUBLIC_LANGUAGE_ENFORCEMENT:{language}\n{rule}",
-        })
+        user_message = messages[last_user_index]
+        user_content = user_message.get("content") if isinstance(user_message, dict) else None
+        if isinstance(user_content, str):
+            suffix = f"\n\n[回复语言要求：{rule}]"
+            if suffix not in user_content:
+                user_message["content"] = user_content + suffix
+
     payload["messages"] = messages
     payload["public_response_language"] = language
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
