@@ -3,7 +3,7 @@
   window.__PUBLIC_LOADER_ACTIVE__ = true;
 
   const STORAGE_KEY = 'public_kb_language';
-  const PUBLIC_STYLE_VERSION = '20260725-hide-source-index-6';
+  const PUBLIC_STYLE_VERSION = '20260725-hide-source-index-7';
   const PUBLIC_KB_VERSION = '20260721-retrieval-parity';
   const PUBLIC_MODEL_ID = 'requirement-docs-kb';
   window.__PUBLIC_LOADER_VERSION = PUBLIC_STYLE_VERSION;
@@ -687,6 +687,7 @@
   // document filenames or Open WebUI's citation/source controls.
   function hidePublicSources() {
     const sourceLabel = /^(?:\d+\s*)?(?:个\s*)?(?:引用来源|引用|来源|参考资料|Sources?|References?|Citations?|ソース|参照|출처|Fuentes|Quellen|مصادر)$/i;
+    const sourceHeader = /^\s*\d{1,3}\s*(?:个|條|条)?\s*(?:引用来源|引用|来源|sources?|references?|citations?)\s*$/i;
     const citationSummary = /\d{1,3}\s*(?:个|條|条)?\s*(?:引用来源|引用|来源|sources?|references?|citations?)/i;
     const filename = /^[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|xls|csv|txt|pptx?)$/i;
     const indexedFilename = /^\s*\d{1,3}\s+[^<>\n]{1,180}\.(?:md|markdown|pdf|docx?|xlsx?|xls|csv|txt|pptx?)\s*$/i;
@@ -715,6 +716,48 @@
       }
       hide(target);
     };
+    const hasFileReference = (text) => (text.match(new RegExp(filenameAnywhere.source, 'gi')) || []).length > 0;
+    const hideCitationCluster = (node) => {
+      const control = node.closest('button, a, [role="button"], li, [role="listitem"]') || node;
+      let header = control;
+      const headerText = normalize(header.textContent);
+      if (header.parentElement) {
+        const parentText = normalize(header.parentElement.textContent);
+        if (parentText.length <= headerText.length + 40) {
+          header = header.parentElement;
+        }
+      }
+
+      let current = header;
+      for (let depth = 0; depth < 5 && current?.parentElement; depth += 1) {
+        const parent = current.parentElement;
+        const text = normalize(parent.textContent);
+        if (!text || text.length > 1200 || parent.querySelector('table, pre, code')) break;
+        if (citationSummary.test(text.slice(0, 180)) && hasFileReference(text)) {
+          hide(parent);
+          return;
+        }
+        current = parent;
+      }
+
+      hide(header);
+      let sibling = header.nextElementSibling;
+      for (let i = 0; sibling && i < 16; i += 1) {
+        const text = normalize(sibling.textContent);
+        const next = sibling.nextElementSibling;
+        if (!text) {
+          sibling = next;
+          continue;
+        }
+        const sourceish = sourceHeader.test(text) ||
+          indexedFilename.test(text) ||
+          filename.test(text) ||
+          (hasFileReference(text) && text.length <= 700);
+        if (!sourceish) break;
+        hide(sibling);
+        sibling = next;
+      }
+    };
     const root = document.querySelector('body[data-public-mode="true"]') || document.body;
     if (!root) return;
 
@@ -725,14 +768,13 @@
     root.querySelectorAll('button, a, [role="button"]').forEach((node) => {
       const text = normalize(node.textContent);
       const attrs = `${node.getAttribute('aria-label') || ''} ${node.getAttribute('title') || ''}`;
+      if (sourceHeader.test(text) || (citationSummary.test(text) && text.length <= 80)) {
+        hideCitationCluster(node);
+        return;
+      }
       if (sourceLabel.test(text) || filename.test(text) || indexedFilename.test(text) || /citation|reference|source/i.test(attrs)) {
         if (sourceLabel.test(text)) {
-          const header = node.parentElement && normalize(node.parentElement.textContent) === text ? node.parentElement : node;
-          const sourceList = header.nextElementSibling;
-          hide(header);
-          if (sourceList && filenameAnywhere.test(normalize(sourceList.textContent))) {
-            hide(sourceList);
-          }
+          hideCitationCluster(node);
         }
         hide(node);
       }
@@ -750,9 +792,8 @@
 
     root.querySelectorAll('span, div, li, p').forEach((node) => {
       const text = normalize(node.textContent);
-      if (sourceLabel.test(text)) {
-        const control = node.closest('button, a, [role="button"]') || node;
-        hide(control.parentElement && normalize(control.parentElement.textContent) === text ? control.parentElement : control);
+      if (sourceLabel.test(text) || sourceHeader.test(text) || (citationSummary.test(text) && text.length <= 80)) {
+        hideCitationCluster(node);
         return;
       }
       if (node.children.length > 0) return;
@@ -775,11 +816,12 @@
       const startsWithCitationHeader = citationSummary.test(text.slice(0, 100)) || sourceLabel.test(text);
       const hasAnswerContent = !!node.querySelector('p, table, pre, code');
       const looksLikeSourceList = fileMatches.length >= 2 && /^\s*(?:\d+\s*)?[^<>\n]{1,180}\./m.test(text);
+      const looksLikeSourceFooter = citationSummary.test(text.slice(0, 180)) && fileMatches.length >= 1;
       if (startsWithCitationHeader && filenameAnywhere.test(text) && !hasAnswerContent) {
         hideCompactBlock(node);
         return;
       }
-      if (looksLikeSourceList && !hasAnswerContent) {
+      if ((looksLikeSourceList || looksLikeSourceFooter) && !hasAnswerContent) {
         hideCompactBlock(node);
       }
     });
