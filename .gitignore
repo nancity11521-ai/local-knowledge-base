@@ -1,5 +1,27 @@
+# Secrets / local config (never commit)
 .env
 .env.public
+.env.*
+!.env.example
+!.env.public.example
+
+# Sync / temp
 .sync-tmp/
+
+# Backups & data volumes
 backups/
+
+# Python
 __pycache__/
+*.pyc
+
+# Editor / OS
+.DS_Store
+node_modules/
+*.bak
+*.log
+.idea/
+.vscode/
+
+# System directory (must never enter the repo)
+snap/
