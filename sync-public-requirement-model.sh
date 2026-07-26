@@ -15,9 +15,9 @@ DOCKER_BIN="$(find_docker_bin)" || {
 MAIN_CONTAINER="${MAIN_CONTAINER:-local-knowledge-base}"
 PUBLIC_CONTAINER="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
 CACHE_CONTAINER="${CACHE_CONTAINER:-local-knowledge-base-token-cache}"
-MODEL_ID="requirement-docs-kb"
+MODEL_ID="${MODEL_ID:-requirement-docs-kb}"
 KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
-PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260722-container-safe-1}"
+PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260726-knowledge-json-files-1}"
 export DOCKER_BIN
 export MAIN_CONTAINER
 
@@ -72,7 +72,74 @@ model = cur.execute("select * from model where id = ?", (model_id,)).fetchone()
 if not model:
     raise SystemExit(f"Model not found: {model_id}")
 
-public_knowledge = cur.execute("select id from knowledge where name = ?", (knowledge_name,)).fetchone()
+FILE_CONTAINER_KEYS = {"file_ids", "fileids", "files", "documents", "document_ids", "docs"}
+
+def parse_json(value):
+    if not value:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if not isinstance(value, str):
+        return None
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return None
+
+def add_ordered(target, seen, value):
+    if value and value not in seen:
+        seen.add(value)
+        target.append(value)
+
+def collect_file_id_candidates(value, out, in_file_context=False):
+    parsed = parse_json(value)
+    if parsed is not None:
+        value = parsed
+    if isinstance(value, dict):
+        for key, item in value.items():
+            key_l = str(key).lower()
+            if key_l in {"file_id", "fileid"} and isinstance(item, str):
+                out.add(item)
+            elif key_l == "id" and in_file_context and isinstance(item, str):
+                out.add(item)
+            elif key_l in FILE_CONTAINER_KEYS:
+                collect_file_id_candidates(item, out, True)
+            else:
+                collect_file_id_candidates(item, out, in_file_context)
+    elif isinstance(value, list):
+        for item in value:
+            collect_file_id_candidates(item, out, in_file_context)
+    elif isinstance(value, str) and in_file_context:
+        out.add(value)
+
+def valid_file_ids(cur, candidates):
+    if not candidates:
+        return set()
+    ids = sorted(candidates)
+    valid = set()
+    for idx in range(0, len(ids), 500):
+        chunk = ids[idx:idx + 500]
+        marks = ",".join("?" for _ in chunk)
+        for row in cur.execute(f"select id from file where id in ({marks})", chunk).fetchall():
+            valid.add(row["id"])
+    return valid
+
+def knowledge_file_ids(cur, knowledge):
+    ids = []
+    seen = set()
+    for row in cur.execute(
+        "select file_id from knowledge_file where knowledge_id = ? order by created_at, file_id",
+        (knowledge["id"],),
+    ).fetchall():
+        add_ordered(ids, seen, row["file_id"])
+    candidates = set()
+    collect_file_id_candidates(knowledge["data"], candidates)
+    collect_file_id_candidates(knowledge["meta"], candidates)
+    for fid in sorted(valid_file_ids(cur, candidates)):
+        add_ordered(ids, seen, fid)
+    return ids
+
+public_knowledge = cur.execute("select id, data, meta from knowledge where name = ?", (knowledge_name,)).fetchone()
 if not public_knowledge:
     raise SystemExit(f"Public knowledge collection not found: {knowledge_name}")
 
@@ -80,13 +147,7 @@ if not public_knowledge:
 # Do not inherit older or directly attached model files, which could expose
 # documents from a private collection.
 collection_ids = [public_knowledge["id"]]
-file_ids = []
-for col_id in collection_ids:
-    k_files = cur.execute("select file_id from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
-    for kf in k_files:
-        file_ids.append(kf["file_id"])
-
-file_ids = list(set(file_ids))  # unique list
+file_ids = knowledge_file_ids(cur, public_knowledge)
 
 # Retrieve file paths from the file table
 paths = []
@@ -101,7 +162,7 @@ with open(out, "w", encoding="utf-8") as f:
     for p in paths:
         f.write(p + "\n")
 
-print(f"Total files linked to model '{model_id}': {len(filenames)}")
+print(f"Total files linked to public knowledge '{knowledge_name}': {len(filenames)}")
 for fname in filenames:
     print("-", fname)
 PY
@@ -159,7 +220,74 @@ model = src_cur.execute("select * from model where id = ?", (model_id,)).fetchon
 if not model:
     raise SystemExit(f"Source model '{model_id}' not found")
 
-public_knowledge = src_cur.execute("select id, name from knowledge where name = ?", (knowledge_name,)).fetchone()
+FILE_CONTAINER_KEYS = {"file_ids", "fileids", "files", "documents", "document_ids", "docs"}
+
+def parse_json(value):
+    if not value:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if not isinstance(value, str):
+        return None
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return None
+
+def add_ordered(target, seen, value):
+    if value and value not in seen:
+        seen.add(value)
+        target.append(value)
+
+def collect_file_id_candidates(value, out, in_file_context=False):
+    parsed = parse_json(value)
+    if parsed is not None:
+        value = parsed
+    if isinstance(value, dict):
+        for key, item in value.items():
+            key_l = str(key).lower()
+            if key_l in {"file_id", "fileid"} and isinstance(item, str):
+                out.add(item)
+            elif key_l == "id" and in_file_context and isinstance(item, str):
+                out.add(item)
+            elif key_l in FILE_CONTAINER_KEYS:
+                collect_file_id_candidates(item, out, True)
+            else:
+                collect_file_id_candidates(item, out, in_file_context)
+    elif isinstance(value, list):
+        for item in value:
+            collect_file_id_candidates(item, out, in_file_context)
+    elif isinstance(value, str) and in_file_context:
+        out.add(value)
+
+def valid_file_ids(cur, candidates):
+    if not candidates:
+        return set()
+    ids = sorted(candidates)
+    valid = set()
+    for idx in range(0, len(ids), 500):
+        chunk = ids[idx:idx + 500]
+        marks = ",".join("?" for _ in chunk)
+        for row in cur.execute(f"select id from file where id in ({marks})", chunk).fetchall():
+            valid.add(row["id"])
+    return valid
+
+def knowledge_file_ids(cur, knowledge):
+    ids = []
+    seen = set()
+    for row in cur.execute(
+        "select file_id from knowledge_file where knowledge_id = ? order by created_at, file_id",
+        (knowledge["id"],),
+    ).fetchall():
+        add_ordered(ids, seen, row["file_id"])
+    candidates = set()
+    collect_file_id_candidates(knowledge["data"], candidates)
+    collect_file_id_candidates(knowledge["meta"], candidates)
+    for fid in sorted(valid_file_ids(cur, candidates)):
+        add_ordered(ids, seen, fid)
+    return ids
+
+public_knowledge = src_cur.execute("select id, name, data, meta from knowledge where name = ?", (knowledge_name,)).fetchone()
 if not public_knowledge:
     raise SystemExit(f"Public knowledge collection not found: {knowledge_name}")
 
@@ -167,13 +295,7 @@ if not public_knowledge:
 # This prevents a stale admin-model binding from silently excluding new files.
 collection_ids = [public_knowledge["id"]]
 explicit_file_ids = []
-file_ids = []
-for col_id in collection_ids:
-    k_files = src_cur.execute("select file_id from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
-    for kf in k_files:
-        file_ids.append(kf["file_id"])
-
-file_ids = list(set(file_ids))
+file_ids = knowledge_file_ids(src_cur, public_knowledge)
 
 # Clear old entries in public DB to avoid stale data or access control conflicts
 dst_cur.execute("delete from model")
@@ -227,11 +349,13 @@ for fid in file_ids:
         )
 
 # Copy only the file links that are part of the public model context.
+linked_file_ids = set()
 for col_id in collection_ids:
     links = src_cur.execute("select * from knowledge_file where knowledge_id = ?", (col_id,)).fetchall()
     for link in links:
         if link["file_id"] not in file_ids:
             continue
+        linked_file_ids.add(link["file_id"])
         dst_cur.execute(
             """
             insert or replace into knowledge_file
@@ -248,6 +372,21 @@ for col_id in collection_ids:
                 link["directory_id"],
             ),
         )
+
+# Some Open WebUI versions keep collection file bindings in knowledge.data/meta
+# without a matching knowledge_file row. Materialize those links in the public
+# copy so RAG retrieval sees exactly the same public knowledge files.
+for fid in file_ids:
+    if fid in linked_file_ids:
+        continue
+    dst_cur.execute(
+        """
+        insert or replace into knowledge_file
+        (id, user_id, knowledge_id, file_id, created_at, updated_at, directory_id)
+        values (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (str(uuid.uuid4()), public_user_id, public_knowledge["id"], fid, now, now, None),
+    )
 
 # Create read access grants for everyone
 for resource_type, resource_id in (("model", model_id),):
@@ -528,6 +667,15 @@ PY
 
 echo "Restarting public instance with fresh configuration..."
 "${DOCKER_BIN}" restart "${PUBLIC_CONTAINER}"
+# Wait for the container to be running before injecting assets.
+echo "Waiting for public container to be ready..."
+for i in $(seq 1 30); do
+  if "${DOCKER_BIN}" inspect -f '{{.State.Running}}' "${PUBLIC_CONTAINER}" 2>/dev/null | grep -qx true; then
+    sleep 3
+    break
+  fi
+  sleep 2
+done
 "${SCRIPT_DIR}/inject-public-assets.sh"
 
 echo

@@ -17,7 +17,7 @@ KNOWLEDGE_NAME="${KNOWLEDGE_NAME:-g3问题库}"
 MODEL_ID="${MODEL_ID:-requirement-docs-kb}"
 # Bump when the synchronization implementation changes in a way that requires
 # one fresh public-model import even if no document changed.
-PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260722-container-safe-1}"
+PUBLIC_SYNC_FORMAT_VERSION="${PUBLIC_SYNC_FORMAT_VERSION:-20260726-knowledge-json-files-1}"
 
 case "${TARGET}" in
   main)
@@ -54,19 +54,95 @@ knowledge = cur.execute(
     "select id, name, description, meta, created_at, data from knowledge where name = ?",
     (knowledge_name,),
 ).fetchone()
-rows = cur.execute(
-    """
-    select f.id, coalesce(f.hash, '') as hash, f.filename, coalesce(f.path, '') as path,
-           coalesce(f.meta, '') as meta, coalesce(f.data, '') as data,
-           coalesce(f.created_at, '') as created_at
-    from file f
-    join knowledge_file kf on kf.file_id = f.id
-    join knowledge k on k.id = kf.knowledge_id
-    where k.name = ?
-    order by f.id
-    """,
-    (knowledge_name,),
-).fetchall()
+
+FILE_CONTAINER_KEYS = {"file_ids", "fileids", "files", "documents", "document_ids", "docs"}
+
+def parse_json(value):
+    if not value:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if not isinstance(value, str):
+        return None
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return None
+
+def add_ordered(target, seen, value):
+    if value and value not in seen:
+        seen.add(value)
+        target.append(value)
+
+def collect_file_id_candidates(value, out, in_file_context=False):
+    parsed = parse_json(value)
+    if parsed is not None:
+        value = parsed
+    if isinstance(value, dict):
+        for key, item in value.items():
+            key_l = str(key).lower()
+            if key_l in {"file_id", "fileid"} and isinstance(item, str):
+                out.add(item)
+            elif key_l == "id" and in_file_context and isinstance(item, str):
+                out.add(item)
+            elif key_l in FILE_CONTAINER_KEYS:
+                collect_file_id_candidates(item, out, True)
+            else:
+                collect_file_id_candidates(item, out, in_file_context)
+    elif isinstance(value, list):
+        for item in value:
+            collect_file_id_candidates(item, out, in_file_context)
+    elif isinstance(value, str) and in_file_context:
+        out.add(value)
+
+def valid_file_ids(cur, candidates):
+    if not candidates:
+        return set()
+    ids = sorted(candidates)
+    valid = set()
+    for idx in range(0, len(ids), 500):
+        chunk = ids[idx:idx + 500]
+        marks = ",".join("?" for _ in chunk)
+        for row in cur.execute(f"select id from file where id in ({marks})", chunk).fetchall():
+            valid.add(row["id"])
+    return valid
+
+def knowledge_file_ids(cur, knowledge):
+    if knowledge is None:
+        return []
+    ids = []
+    seen = set()
+    for row in cur.execute(
+        "select file_id from knowledge_file where knowledge_id = ? order by created_at, file_id",
+        (knowledge["id"],),
+    ).fetchall():
+        add_ordered(ids, seen, row["file_id"])
+    candidates = set()
+    collect_file_id_candidates(knowledge["data"], candidates)
+    collect_file_id_candidates(knowledge["meta"], candidates)
+    for fid in sorted(valid_file_ids(cur, candidates)):
+        add_ordered(ids, seen, fid)
+    return ids
+
+file_ids = knowledge_file_ids(cur, knowledge)
+rows = []
+for idx in range(0, len(file_ids), 500):
+    chunk = file_ids[idx:idx + 500]
+    marks = ",".join("?" for _ in chunk)
+    row_map = {
+        row["id"]: row
+        for row in cur.execute(
+            f"""
+            select id, coalesce(hash, '') as hash, filename, coalesce(path, '') as path,
+                   coalesce(meta, '') as meta, coalesce(data, '') as data,
+                   coalesce(created_at, '') as created_at
+            from file
+            where id in ({marks})
+            """,
+            chunk,
+        ).fetchall()
+    }
+    rows.extend(row_map[fid] for fid in chunk if fid in row_map)
 
 config_columns = {row[1] for row in cur.execute("pragma table_info(config)")}
 if {"key", "value"}.issubset(config_columns):
