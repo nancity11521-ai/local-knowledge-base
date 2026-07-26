@@ -7,14 +7,14 @@ resolve_public_container() {
   local configured_name="${PUBLIC_CONTAINER:-local-knowledge-base-public}"
   local container_id=""
 
-  if "${DOCKER_BIN}" inspect "${configured_name}" >/dev/null 2>&1; then
-    printf '%s\n' "${configured_name}"
-    return 0
-  fi
-
   container_id="$("${DOCKER_BIN}" compose --env-file .env.public -f docker-compose.public.yml ps -aq open-webui-public 2>/dev/null | head -n1 || true)"
   if [ -n "${container_id}" ]; then
     printf '%s\n' "${container_id}"
+    return 0
+  fi
+
+  if "${DOCKER_BIN}" inspect "${configured_name}" >/dev/null 2>&1; then
+    printf '%s\n' "${configured_name}"
     return 0
   fi
 
